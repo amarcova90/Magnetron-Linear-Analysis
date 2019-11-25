@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+//#include <Python.h>
 
 int main(int argc, char *argv[]){
   if(argc!=2){
@@ -11,7 +12,7 @@ int main(int argc, char *argv[]){
     return 0;
   }
   std::string plasma_data_file;
-  double mi, Te, B0, E0, R0, LB, Ln, De0, vi0, kz, kx, my_max, my_min;
+  double mi, Te, B0, ne, E0, R0, LB, Ln, De0, vi0, kz, kx, my_max, my_min;
   double voltage_scale[2];
   double voltage_increment, my_increment;
   unsigned int N_voltages, N_modes;
@@ -45,6 +46,8 @@ int main(int argc, char *argv[]){
 	  f >> LB;
 	else if (name == "Ln")
 	  f >> Ln;
+    else if (name == "ne")
+	  f >> ne;
 	else if (name == "electron_diffusion")
 	  f >> De0;
 	else if (name == "vi0")
@@ -88,14 +91,15 @@ int main(int argc, char *argv[]){
 	s << "  kx                             " << kx << "\n";
 	s << "  N_voltages                     " << N_voltages << "\n";
 	s << "  N_modes                        " << N_modes << "\n\n";
-	s << "#############################################################################################\n";
-	s << "#                                          Solution                                         #\n";
-	s << "#############################################################################################\n";
-	s << "#  Voltage [V]  Mode Number []  Frequency [Hz]  Ion velocity [m/s]   De [m^2/s]    Te [kTe]\n";
-    double E, T, cs, nupara, scale_factor, De, vd, vD, v0, vix, wi0, my, ky, kp, wd, wD, w0, wR;
+	s << "###########################################\n";
+	s << "#             Output parameters           #\n";
+	s << "###########################################\n";	
+	s << "#  Voltage [V]   m decr []      f decr [Hz]   Ia decr [A]   m incr []     "	
+	      " f incr [Hz]   Ia decr [A]     Ion velocity [m/s]   De [m^2/s]    Te [eV]\n";
+    double E, T, cs, Ix, nupara, scale_factor, De, vd, vD, v0, vix; 
+	double wi0, my, ky, ky_incr, ky_decr, kp, wd, wD, w0, wR, wR_incr, wR_decr;
 	double  wI_new, wI_old, wI_previous;
-	std::vector<double> wI_v, wR_v;
-	std::vector<int> m_v;
+
 	s.setf(std::ios::scientific, std::ios::floatfield);
     s.precision(4);
 	for(unsigned int i = 0; i < N_voltages; i++){
@@ -122,7 +126,7 @@ int main(int argc, char *argv[]){
 	      wd = vd*ky;
 	      wD = vD*ky;
 	      w0 = v0*ky;
-
+		  
 	      wI_new = 0.5/sqrt(2)*sqrt(sqrt(pow(cs,8)*pow(kp,8)/pow((wd-wD),4) +
                    16*pow(cs,4)*pow(kp,4)/pow((wd-wD),2)*(pow((wi0-w0-wD),2)+nupara*nupara)+ 
 	               8*pow(cs,6)*pow(kp,6)/pow((wd-wD),3)*(wi0-w0-wD))-
@@ -138,24 +142,64 @@ int main(int argc, char *argv[]){
 		
 	      if (wI_old > 0.0 and wI_previous > 0.0 and wI_new > 0.0 and 
 	          wI_previous > wI_old and wI_previous > wI_new){
-		      wI_v.push_back(wI_previous);//std::cout << wI_old << ' ' << wI_previous << ' ' << wI_new << std::endl;
-			  m_v.push_back((int)my);
-			  ky = floor(my)/R0;
-			  kp = sqrt(kx*kx+ky*ky);
-			  wd = vd*ky;
-	          wD = vD*ky;
-	          w0 = v0*ky;
-			  wR = 0.5*(2*wi0+kp*kp*cs*cs/(wd-wD))+
+
+			  s << "  " << E*Ln << "       " ;
+			  
+			  ky_decr = floor(my)/R0;
+			  kp = sqrt(kx*kx+ky_decr*ky_decr);
+			  wd = vd*ky_decr;
+	          wD = vD*ky_decr;
+	          w0 = v0*ky_decr;
+			  wR_decr = 0.5*(2*wi0+kp*kp*cs*cs/(wd-wD))+
+                   0.5/sqrt(2)*sqrt(sqrt(pow(cs,8)*pow(kp,8)/pow((wd-wD),4) +
+                   16*pow(cs,4)*pow(kp,4)/pow((wd-wD),2)*(pow((wi0-w0-wD),2)+nupara*nupara)+
+                   8*pow(cs,6)*pow(kp,6)/pow((wd-wD),3)*(wi0-w0-wD))+
+                   pow(cs,4)*pow(kp,4)/pow((wd-wD),2)+4*cs*cs*kp*kp/(wd-wD)*
+                   (wi0-w0-wD));	
+
+			  s << (int)floor(my) << "           " << wR_decr/M_PI/2;
+			  
+			  
+			  double dphi = E*Ln/10;//5;
+			  Ix = sqrt(pow((ky*ne*(wd-wD)*(wI_previous+kz*kz*De)*e*e*dphi*dphi/T/B0)/
+			              (pow(wR-w0-wD,2)+pow(wI_previous+kz*kz*De,2)),2) +
+				          pow((ky*ne*(wd-wD)*(wR-w0-wD)*e*e*dphi*dphi/T/B0)/
+			              (pow(wR-w0-wD,2)+pow(wI_previous+kz*kz*De,2)),2))*M_PI*R0*R0/8;
+			  s << "    " << Ix ;
+			 
+			  
+			  ky_incr = ceil(my)/R0;
+			  kp = sqrt(kx*kx+ky_incr*ky_incr);
+			  wd = vd*ky_incr;
+	          wD = vD*ky_incr;
+	          w0 = v0*ky_incr;
+			  wR_incr = 0.5*(2*wi0+kp*kp*cs*cs/(wd-wD))+
                    0.5/sqrt(2)*sqrt(sqrt(pow(cs,8)*pow(kp,8)/pow((wd-wD),4) +
                    16*pow(cs,4)*pow(kp,4)/pow((wd-wD),2)*(pow((wi0-w0-wD),2)+nupara*nupara)+
                    8*pow(cs,6)*pow(kp,6)/pow((wd-wD),3)*(wi0-w0-wD))+
                    pow(cs,4)*pow(kp,4)/pow((wd-wD),2)+4*cs*cs*kp*kp/(wd-wD)*
                    (wi0-w0-wD));
-			  wR_v.push_back(wR); 
-			  flag = true;
 			  
-			  s << "  " << E*Ln << "       " << (int)my << "           " << wR/M_PI/2;
-			  s << "      " << vix << "          " << De << "    " << T/e << "\n";
+			  s << "       " << (int)ceil(my)<< "           " << wR_incr/M_PI/2;
+			  
+
+			  Ix = sqrt(pow((ky*ne*(wd-wD)*(wI_previous+kz*kz*De)*e*e*dphi*dphi/T/B0)/
+			              (pow(wR-w0-wD,2)+pow(wI_previous+kz*kz*De,2)),2) +
+				          pow((ky*ne*(wd-wD)*(wR-w0-wD)*e*e*dphi*dphi/T/B0)/
+			              (pow(wR-w0-wD,2)+pow(wI_previous+kz*kz*De,2)),2))*M_PI*R0*R0/8;
+		      s << "    " << Ix ;
+
+			  
+			  
+			  
+
+			  flag = true;
+
+			  
+			  s << "      " << vix << "          " << De << "    " << T/e << "\n"; 
+			  
+
+	  
 	        }
 	
 	
