@@ -55,23 +55,29 @@ with open(solution_file) as s:
 				ne_over_n0_incr = np.zeros(N_voltages, dtype = float)
 				vi1_decr = np.zeros(N_voltages, dtype = float)
 				vi1_incr = np.zeros(N_voltages, dtype = float)
+				ve1_decr = np.zeros(N_voltages, dtype = float)
+				ve1_incr = np.zeros(N_voltages, dtype = float)
 				ion_velocity0 = np.zeros(N_voltages, dtype = float)
 				i = 0
 			else:
 				try:
 					temp_value = float(temp[0])
 					plasma_potential[i] = temp_value
-					m_decr[i] = float(temp[1])
-					frequency_decr[i] = float(temp[2])
-					vi1_decr[i] = float(temp[3])
-					Ix_decr[i] = float(temp[4])
-					ne_over_n0_decr[i] = float(temp[5])
-					m_incr[i] = float(temp[6])
-					frequency_incr[i] = float(temp[7])
-					vi1_incr[i] = float(temp[8])
-					Ix_incr[i] = float(temp[9])
-					ne_over_n0_incr[i] = float(temp[10])
-					ion_velocity0[i] = float(temp[11])
+					ion_velocity0[i] = float(temp[1])
+					m_decr[i] = float(temp[4])
+					frequency_decr[i] = float(temp[5])
+					ne_over_n0_decr[i] = float(temp[6])
+					vi1_decr[i] = float(temp[7])
+					ve1_decr[i] = float(temp[8])
+					Ix_decr[i] = float(temp[12])
+					
+					m_incr[i] = float(temp[13])
+					frequency_incr[i] = float(temp[14])
+					ne_over_n0_incr[i] = float(temp[15])
+					vi1_incr[i] = float(temp[16])
+					ve1_incr[i] = float(temp[17])
+					Ix_incr[i] = float(temp[21])
+					
 					
 					i = i + 1
 				except(ValueError):
@@ -190,10 +196,10 @@ plt.savefig(results_dir+"ne_over_n0_vs_EL.png")
 plt.figure(4)
 for mode in unique_m:
 	if mode in m_decr:
-		plt.plot(abs(plasma_potential[m_decr == mode]),-vi1_decr[m_decr == mode],color=colors[mode])
+		plt.plot(abs(plasma_potential[m_decr == mode]),vi1_decr[m_decr == mode],color=colors[mode])
 		legend_list = legend_list + ["m_{decr} = " + str(mode)] 
 	if mode in m_incr:
-		plt.plot(abs(plasma_potential[m_incr == mode]),-vi1_incr[m_incr == mode],'--',color = colors[mode])	
+		plt.plot(abs(plasma_potential[m_incr == mode]),vi1_incr[m_incr == mode],'--',color = colors[mode])	
 		legend_list = legend_list + ["m_{incr} = " + str(mode)]
 
 plt.legend(legend_list)
