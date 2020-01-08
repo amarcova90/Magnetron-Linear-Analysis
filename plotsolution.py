@@ -51,8 +51,8 @@ with open(solution_file) as s:
 				m_incr = np.zeros(N_voltages, dtype = int)					
 				frequency_incr = np.zeros(N_voltages, dtype = float)
 				Ix_incr = np.zeros(N_voltages, dtype = float)
-				ne_over_n0_decr = np.zeros(N_voltages, dtype = float)
-				ne_over_n0_incr = np.zeros(N_voltages, dtype = float)
+				dphi_decr = np.zeros(N_voltages, dtype = float)
+				dphi_incr = np.zeros(N_voltages, dtype = float)
 				vi1_decr = np.zeros(N_voltages, dtype = float)
 				vi1_incr = np.zeros(N_voltages, dtype = float)
 				ve1_decr = np.zeros(N_voltages, dtype = float)
@@ -66,14 +66,14 @@ with open(solution_file) as s:
 					ion_velocity0[i] = float(temp[1])
 					m_decr[i] = float(temp[4])
 					frequency_decr[i] = float(temp[5])
-					ne_over_n0_decr[i] = float(temp[6])
+					dphi_decr[i] = float(temp[6])
 					vi1_decr[i] = float(temp[7])
 					ve1_decr[i] = float(temp[8])
 					Ix_decr[i] = float(temp[12])
 					
 					m_incr[i] = float(temp[13])
 					frequency_incr[i] = float(temp[14])
-					ne_over_n0_incr[i] = float(temp[15])
+					dphi_incr[i] = float(temp[15])
 					vi1_incr[i] = float(temp[16])
 					ve1_incr[i] = float(temp[17])
 					Ix_incr[i] = float(temp[21])
@@ -128,10 +128,10 @@ if not os.path.isdir(results_dir):
 plt.figure(1)
 for mode in unique_m:
 	if mode in m_decr:
-		plt.plot(abs(plasma_potential[m_decr == mode]),frequency_decr[m_decr == mode]/1000,color=colors[mode])
+		plt.plot(plasma_potential[m_decr == mode],frequency_decr[m_decr == mode]/1000,color=colors[mode])
 		legend_list = legend_list + ["m$_{decr}$ = " + str(mode)] 
 	if mode in m_incr:
-		plt.plot(abs(plasma_potential[m_incr == mode]),frequency_incr[m_incr == mode]/1000,'--',color = colors[mode])	
+		plt.plot(plasma_potential[m_incr == mode],frequency_incr[m_incr == mode]/1000,'--',color = colors[mode])	
 		legend_list = legend_list + ["m$_{incr}$ = " + str(mode)]
 
 if isexperiment:
@@ -153,13 +153,14 @@ plt.savefig(results_dir+"f_vs_EL.png")
 
 
 plt.figure(2)
-for mode in unique_m:
+legend_list=[]
+for mode in (3,4):
 	if mode in m_decr:
-		plt.plot(abs(plasma_potential[m_decr == mode]),Ix_decr[m_decr == mode]*1000,color=colors[mode])
-		legend_list = legend_list + ["m_{decr} = " + str(mode)] 
+		plt.plot(plasma_potential[m_decr == mode],Ix_decr[m_decr == mode]*1000,color=colors[mode])
+		legend_list = legend_list + ["m$_{decr}$ = " + str(mode)] 
 	if mode in m_incr:
-		plt.plot(abs(plasma_potential[m_incr == mode]),Ix_incr[m_incr == mode]*1000,'--',color = colors[mode])	
-		legend_list = legend_list + ["m_{incr} = " + str(mode)]
+		plt.plot(plasma_potential[m_incr == mode],Ix_incr[m_incr == mode]*1000,'--',color = colors[mode])	
+		legend_list = legend_list + ["m$_{incr}$ = " + str(mode)]
 
 if isexperiment:
 	for mode in set(mode_number_exp_decr[~np.isnan(mode_number_exp_decr)]):
@@ -178,29 +179,31 @@ plt.savefig(results_dir+"I_vs_EL.png")
 
 
 plt.figure(3)
+legend_list=[]
 for mode in unique_m:
 	if mode in m_decr:
-		plt.plot(abs(plasma_potential[m_decr == mode]),ne_over_n0_decr[m_decr == mode],color=colors[mode])
-		legend_list = legend_list + ["m_{decr} = " + str(mode)] 
+		plt.plot(plasma_potential[m_decr == mode],dphi_decr[m_decr == mode],color=colors[mode])
+		legend_list = legend_list + ["m$_{decr}$ = " + str(mode)] 
 	if mode in m_incr:
-		plt.plot(abs(plasma_potential[m_incr == mode]),ne_over_n0_incr[m_incr == mode],'--',color = colors[mode])	
-		legend_list = legend_list + ["m_{incr} = " + str(mode)]
+		plt.plot(plasma_potential[m_incr == mode],dphi_incr[m_incr == mode],'--',color = colors[mode])	
+		legend_list = legend_list + ["m$_{incr}$ = " + str(mode)]
 
 plt.legend(legend_list)
 plt.xlabel("E$_0$L$_n$ [V]")
-plt.ylabel("ne/n0 []")
+plt.ylabel("$d\phi$ []")
 #plt.show(block=True)
 plt.show()
 plt.savefig(results_dir+"ne_over_n0_vs_EL.png")
 
 plt.figure(4)
+legend_list=[]
 for mode in unique_m:
 	if mode in m_decr:
-		plt.plot(abs(plasma_potential[m_decr == mode]),vi1_decr[m_decr == mode],color=colors[mode])
-		legend_list = legend_list + ["m_{decr} = " + str(mode)] 
+		plt.plot(plasma_potential[m_decr == mode],vi1_decr[m_decr == mode],color=colors[mode])
+		legend_list = legend_list + ["m$_{decr}$ = " + str(mode)] 
 	if mode in m_incr:
-		plt.plot(abs(plasma_potential[m_incr == mode]),vi1_incr[m_incr == mode],'--',color = colors[mode])	
-		legend_list = legend_list + ["m_{incr} = " + str(mode)]
+		plt.plot(plasma_potential[m_incr == mode],vi1_incr[m_incr == mode],'--',color = colors[mode])	
+		legend_list = legend_list + ["m$_{incr}$ = " + str(mode)]
 
 plt.legend(legend_list)
 plt.xlabel("E$_0$L$_n$ [V]")
