@@ -7,7 +7,6 @@ plasma_thickness          .5e-3
 LB                        .5e-3
 Ln                        2e-3
 n0                        1e18
-Aspoke                    2.5e-7
 electron_diffusion        .135
 vix                       -890	
 lambda_z                  2.5e-3
