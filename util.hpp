@@ -68,7 +68,8 @@ void ReadDatafromFile(std::ifstream& f, double& mi,     double& Te,
                                         double& my_max, double& my_min,
                                         double& t,      std::pair<double,double>& voltage_scale, 
                                         double& voltage_increment, double& my_increment, 
-                                        unsigned int& N_voltages, unsigned int& N_modes){
+                                        unsigned int& N_voltages, unsigned int& N_modes,
+                                        double& dne_over_n0){
   double ua_to_kg = 1.66053892e-27;                                      
   if (f.is_open()){
     std::string name;
@@ -90,6 +91,7 @@ void ReadDatafromFile(std::ifstream& f, double& mi,     double& Te,
       else if (name == "N_modes") f >> N_modes;
       else if (name == "my_max") f >> my_max;
       else if (name == "my_min") f >> my_min;
+      else if (name == "dne_over_n0") f >> dne_over_n0;
       else if (name == "voltage_scale") {f >> voltage_scale.first >> voltage_scale.second;
       }      
     }

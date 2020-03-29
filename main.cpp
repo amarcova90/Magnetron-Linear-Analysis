@@ -13,7 +13,8 @@ int main(int argc, char *argv[]){
   }
   // Variable definition:
   std::string plasma_data_file;
-  double mi, t, Te, B0, n0, E, E0, R0, LB, Ln, De0, vix, kz, kx, my_max, my_min;
+  double mi, t, Te, B0, n0, E, E0, R0, LB, Ln, De0, vix, kz, kx, 
+         my_max, my_min, ne_over_n0;
   std::pair<double,double> voltage_scale;
   double voltage_increment, my_increment;
   unsigned int N_voltages, N_modes;
@@ -23,13 +24,12 @@ int main(int argc, char *argv[]){
 
   ReadDatafromFile(f, mi, Te, B0, n0, E0, R0, LB, Ln, De0, vix, kz, kx, 
                     my_max, my_min, t, voltage_scale, voltage_increment, 
-                    my_increment, N_voltages, N_modes);
+                    my_increment, N_voltages, N_modes, ne_over_n0);
   
   std::ofstream s("solution.txt");  
   PrintInputHeader(s);
   PrintInputData(s,mi,Te,B0,R0,LB,Ln,kz,kx,N_voltages,N_modes);
   PrintOutputHeader(s);
-  double  ne_over_n0 = 0.1;
   s.setf(std::ios::scientific, std::ios::floatfield);
   s.precision(4);  
   LinearModel discharge(mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t);
