@@ -1,328 +1,68 @@
-#include <complex>
 #include <fstream>
 #include <iostream>
-#include <string>
-#include <vector>
 #include <cmath>
-
+#include "util.hpp"
+#include "linearmodel.hpp"
 
 int main(int argc, char *argv[]){
-  //using namespace std::complex_literals; // use this only with C++17 (then you can use 1i)
+  // Argument check:
   if(argc!=2){
     std::cout << "Wrong number of inputs. Usage";
     std::cout << "$ ./main plasma_data_file" << std::endl;
     return 0;
   }
+  // Variable definition:
   std::string plasma_data_file;
-  double mi, Te, B0, n0, E0, R0, LB, Ln, De0, vix, kz, kx, my_max, my_min;
-  double t = 0.0;
-  double voltage_scale[2];
+  double mi, t, Te, B0, n0, E, E0, R0, LB, Ln, De0, vix, kz, kx, my_max, my_min;
+  std::pair<double,double> voltage_scale;
   double voltage_increment, my_increment;
   unsigned int N_voltages, N_modes;
-  //double me = 9.10938291e-31;
-  double e = 1.60217657e-19;
-  //double kb = 1.3806488e-23;
-  double ua_to_kg = 1.66053892e-27;
-
   
   plasma_data_file = argv[1];
   std::ifstream f(plasma_data_file);
 
-  // Read data from file
-  if (f.is_open()){
-      std::string name;
-
-      while (f >> name){
-	if (name == "ion_mass_u"){
-	  f >> mi;
-          mi=mi*ua_to_kg;
-	  }
-	else if (name == "Te")
-	  f >> Te;
-	else if (name == "B0")
-	  f >> B0;
-	else if (name == "E0")
-	  f >> E0;
-	else if (name == "R0")
-	  f >> R0;
-	else if (name == "LB")
-	  f >> LB;
-	else if (name == "Ln")
-	  f >> Ln;
-    else if (name == "n0")
-	  f >> n0;
-    else if (name == "plasma_thickness")
-	  f >> t;
-	else if (name == "electron_diffusion")
-	  f >> De0;
-	else if (name == "vix")
-	  f >> vix;
-	else if (name == "lambda_z"){
-	  f >> kz;
-	  kz=2*M_PI/kz;
-	  }
-	else if (name == "lambda_x"){
-	  f >> kx;
-	  kx=2*M_PI/kx;
-	  }
-	else if (name == "N_voltages")
-	  f >> N_voltages;
-	else if (name == "N_modes")
-	  f >> N_modes;
-	else if (name == "my_max")
-	  f >> my_max;
-	else if (name == "my_min")
-	  f >> my_min;
-	else if (name == "voltage_scale")
-	  f >> voltage_scale[0] >> voltage_scale[1]; 
-      }
-      voltage_increment=(voltage_scale[1]-voltage_scale[0])/(N_voltages-1);
-      my_increment = (my_max - my_min) / (N_modes - 1);
-      f.close();
-  }
+  ReadDatafromFile(f, mi, Te, B0, n0, E0, R0, LB, Ln, De0, vix, kz, kx, 
+                    my_max, my_min, t, voltage_scale, voltage_increment, 
+                    my_increment, N_voltages, N_modes);
   
-  std::ofstream s("solution.txt");
-  if(s.is_open()){
-	s << "###########################################\n";
-	s << "#             Input parameters            #\n";
-	s << "###########################################\n";
-	s << "  ion_mass_u                     " << mi / ua_to_kg << "\n";
-	s << "  Te                             " << Te << "\n";
-    s << "  B0                             " << B0 << "\n";
-	s << "  R0                             " << R0 << "\n";
-	s << "  LB                             " << LB << "\n";
-	s << "  Ln                             " << Ln << "\n";
-	s << "  kz                             " << kz << "\n";
-	s << "  kx                             " << kx << "\n";
-	s << "  N_voltages                     " << N_voltages << "\n";
-	s << "  N_modes                        " << N_modes << "\n\n";
-	s << "###########################################\n";
-	s << "#             Output parameters           #\n";
-	s << "###########################################\n";	
-	s << "#  Voltage [V]      vi0 [m/s]        De [m^2/s]    Te [eV]       m decr []      f decr [Hz]   dphi incr []    vi1 decr [m/s]   ve1 decr [m/s]   Ji0 decr [A]    Ji1 decr [A]    Je1 decr [A]    Ix decr [A]    m incr []     "	
-	      " f incr [Hz]   dphi incr []    vi1 incr [m/s]   ve1 incr [m/s]   Ji0 incr [A]    Ji1 incr [A]    Je1 incr [A]    Ix incr [A]\n";
-    double E, T, cs, ne0, Ix, nupara, scale_factor, De, vd, vD, v0, vi0; 
-	double wi0, my, my_decr, my_incr, ky, ky_incr, ky_decr, kp, wd, wD, w0, wR_incr, wR_decr;
-	double  wI_new, wI_old, wI_previous, wI_decr, wI_incr;
-	double Jxi0, Jxi1, Jxe1;
-	std::complex <double> vi1_complex, ve1_complex, w_decr_complex, w_incr_complex, dphi_complex;
-	double  ne_over_n0 = 1.0;
+  std::ofstream s("solution.txt");  
+  PrintInputHeader(s);
+  PrintInputData(s,mi,Te,B0,R0,LB,Ln,kz,kx,N_voltages,N_modes);
+  PrintOutputHeader(s);
+  double  ne_over_n0 = 0.1;
+  s.setf(std::ios::scientific, std::ios::floatfield);
+  s.precision(4);  
+  LinearModel discharge(mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t);
+  
+  for(unsigned int i = 0; i < N_voltages; i++){
+    E = E0*(voltage_scale.first+voltage_increment*i);
+    discharge.set_E(E);
+    discharge.Save2File(s,ne_over_n0);
+  }
+   
+  std::ofstream g("w_solution.txt");
 
-	s.setf(std::ios::scientific, std::ios::floatfield);
-    s.precision(4);
-	for(unsigned int i = 0; i < N_voltages; i++){
-      
-	  E = E0*(voltage_scale[0]+voltage_increment*i);
-      scale_factor = E/E0;
-      T = Te*scale_factor*e;
-      De = De0*scale_factor;
-	  ne0=n0*scale_factor;
-	  //ne0=n0;
-      cs = sqrt(T/mi);
-      nupara = kz*kz*De;
-      vd = -T/e/B0/Ln;
-      vD = -2*T/e/B0/LB;
-      v0 = -E/B0;
-      vi0 = vix*sqrt(scale_factor);
-      wi0 = kx*vi0;
+  // Read data from file
+  if (g.is_open()){
 
-	  wI_new = -1.0; wI_old = -1.0; wI_previous = -1.0;
-	  bool flag = false;
-      for( my = my_min; my < my_max; my+=my_increment){
-		  
-		  //std::cout << wI_old << "   " << wI_previous << "   " << wI_new << std::endl;
-		  
-		  wI_old=wI_previous;
-	      wI_previous=wI_new;
-	      ky = my/R0;
-	      kp = sqrt(kx*kx+ky*ky);
-	      wd = vd*ky;
-	      wD = vD*ky;
-	      w0 = v0*ky;
-		  
-	      wI_new = 0.5/sqrt(2)*sqrt(sqrt(pow(cs,8)*pow(kp,8)/pow((wd-wD),4) +
-                   16*pow(cs,4)*pow(kp,4)/pow((wd-wD),2)*(pow((wi0-w0-wD),2)+nupara*nupara)+ 
-	               8*pow(cs,6)*pow(kp,6)/pow((wd-wD),3)*(wi0-w0-wD))-
-                   pow(cs,4)*pow(kp,4)/pow((wd-wD),2)-4*cs*cs*kp*kp/(wd-wD)* 
-	               (wi0-w0-wD));
+    g.setf(std::ios::scientific, std::ios::floatfield);
+    g.precision(4);
+    discharge.set_E(E0);
 
-/* 	      wR = 0.5*(2*wi0+kp*kp*cs*cs/(wd-wD))+
-               0.5/sqrt(2)*sqrt(sqrt(pow(cs,8)*pow(kp,8)/pow((wd-wD),4) +
-               16*pow(cs,4)*pow(kp,4)/pow((wd-wD),2)*(pow((wi0-w0-wD),2)+nupara*nupara)+
-               8*pow(cs,6)*pow(kp,6)/pow((wd-wD),3)*(wi0-w0-wD))+
-               pow(cs,4)*pow(kp,4)/pow((wd-wD),2)+4*cs*cs*kp*kp/(wd-wD)*
-               (wi0-w0-wD)); */
-		
-	      if (wI_old > 0.0 and wI_previous > 0.0 and wI_new > 0.0 and 
-	          wI_previous > wI_old and wI_previous > wI_new){
-
-			  s << "   " << -E*Ln << "       " ;
-			  
-			  s << vi0 << "      " << De << "    " << T/e ;
-			  
-			  // DECREASING VOLTAGES
-			  
-			  my_decr = floor(my);
-			  ky_decr = my_decr/R0;
-			  kp = sqrt(kx*kx+ky_decr*ky_decr);
-			  wd = vd*ky_decr;
-	          wD = vD*ky_decr;
-	          w0 = v0*ky_decr;
-			  wR_decr = 0.5*(2*wi0+kp*kp*cs*cs/(wd-wD))+
-                   0.5/sqrt(2)*sqrt(sqrt(pow(cs,8)*pow(kp,8)/pow((wd-wD),4) +
-                   16*pow(cs,4)*pow(kp,4)/pow((wd-wD),2)*(pow((wi0-w0-wD),2)+nupara*nupara)+
-                   8*pow(cs,6)*pow(kp,6)/pow((wd-wD),3)*(wi0-w0-wD))+
-                   pow(cs,4)*pow(kp,4)/pow((wd-wD),2)+4*cs*cs*kp*kp/(wd-wD)*
-                   (wi0-w0-wD));
-				   
-			  wI_decr = 0.5/sqrt(2)*sqrt(sqrt(pow(cs,8)*pow(kp,8)/pow((wd-wD),4) +
-                   16*pow(cs,4)*pow(kp,4)/pow((wd-wD),2)*(pow((wi0-w0-wD),2)+nupara*nupara)+ 
-	               8*pow(cs,6)*pow(kp,6)/pow((wd-wD),3)*(wi0-w0-wD))-
-                   pow(cs,4)*pow(kp,4)/pow((wd-wD),2)-4*cs*cs*kp*kp/(wd-wD)* 
-	               (wi0-w0-wD));
-
-			  w_decr_complex.real( wR_decr );
-			  w_decr_complex.imag( wI_decr );
-			  
-			  s << "       " << (int)my_decr << "           " << wR_decr/M_PI/2;
-			  
-			  // potential flucuation
-			  
-			  
-			  //dphi_complex.real( ne_over_n0*Te*(wR_decr-w0-wD)/(wd-wD) );
-			  //dphi_complex.imag( ne_over_n0*Te*(kz*kz*De + wI_decr)/(wd-wD) );
-			  
-			  dphi_complex.real( E*Ln/3.5 );
-			  dphi_complex.imag( 0 );
-			
-			  
-			  s << "    " << abs(dphi_complex)  ;			  
-
-			  //fact=(n0*(wd-wD)*e*e*dphi/T)/(pow(wR-w0-wD,2)+pow(wI_previous+kz*kz*De,2))
-			  //vire= vi0*(wR_decr)
-			  
-			  // Ion velocity fluctuation
-			  
-			  //vi1 = dphi*(e/mi*kx*(wR_decr-kx*vi0))/(pow(wR_decr-kx*vi0,2)+wI_decr*wI_decr)*sqrt(1+wI_decr*wI_decr/pow(wR_decr-kx*vi0,2));
-			  
-			  vi1_complex = e/mi*kx/(w_decr_complex-kx*vi0)*dphi_complex;
-			  
-			  
-			  s << "      " << abs(vi1_complex) ;
-			  
-			  ve1_complex.real ( -ky_decr/B0*dphi_complex.imag() );
-			  ve1_complex.imag ( ky_decr/B0*dphi_complex.real() );
-			  
-			  s << "      " << abs(ve1_complex) ;
-			  
-			  // Current density fluctuation
-			  
-			  Jxi0 =   e*ne0*vi0;
-			  Jxi1 =   0.5*e*ne0*(ne_over_n0)*std::real(vi1_complex) ;
-			  Jxe1 =  -0.5*e*ne0*(ne_over_n0)*std::real(ve1_complex) ;
-
-			  
-			  s << "      " << Jxi0 << "      " << Jxi1 << "      " << Jxe1 ;
-			  
-			  Ix =  -(Jxi0+Jxi1+Jxe1)*t*2.0*M_PI*R0; //Jxi0*t*2.0*M_PI*R0 + Jxi1*t*2.0*M_PI*R0 + Jxe1*t*2.0*M_PI*R0;
-			  //Ix =  std::real(Jxi0) * Aspoke * my_decr;
-			  
-			  //std::cout << Ix << std::endl;
-			  
-			  s << "      " << Ix ;
-			 
-
-			  
-			  // INCREASING VOLTAGES
-			  my_incr = ceil(my);
-			  ky_incr = my_incr/R0;
-			  kp = sqrt(kx*kx+ky_incr*ky_incr);
-			  wd = vd*ky_incr;
-	          wD = vD*ky_incr;
-	          w0 = v0*ky_incr;
-			  wR_incr = 0.5*(2*wi0+kp*kp*cs*cs/(wd-wD))+
-                   0.5/sqrt(2)*sqrt(sqrt(pow(cs,8)*pow(kp,8)/pow((wd-wD),4) +
-                   16*pow(cs,4)*pow(kp,4)/pow((wd-wD),2)*(pow((wi0-w0-wD),2)+nupara*nupara)+
-                   8*pow(cs,6)*pow(kp,6)/pow((wd-wD),3)*(wi0-w0-wD))+
-                   pow(cs,4)*pow(kp,4)/pow((wd-wD),2)+4*cs*cs*kp*kp/(wd-wD)*
-                   (wi0-w0-wD));
-			  wI_incr = 0.5/sqrt(2)*sqrt(sqrt(pow(cs,8)*pow(kp,8)/pow((wd-wD),4) +
-                   16*pow(cs,4)*pow(kp,4)/pow((wd-wD),2)*(pow((wi0-w0-wD),2)+nupara*nupara)+ 
-	               8*pow(cs,6)*pow(kp,6)/pow((wd-wD),3)*(wi0-w0-wD))-
-                   pow(cs,4)*pow(kp,4)/pow((wd-wD),2)-4*cs*cs*kp*kp/(wd-wD)* 
-	               (wi0-w0-wD));
-			  
-			  w_incr_complex.real( wR_incr );
-			  w_incr_complex.imag( wI_incr );
-			  
-			  
-			  s << "        " << (int)my_incr << "           " << wR_incr/M_PI/2;		  
-			  
-			  // potential flucuation
-			  
-			  
-			  //dphi_complex.real( ne_over_n0*Te*(wR_decr-w0-wD)/(wd-wD) );
-			  //dphi_complex.imag( ne_over_n0*Te*(kz*kz*De + wI_decr)/(wd-wD) );
-			  
-			  //dphi_complex.real( E*Ln/10 );
-			  //dphi_complex.imag( 0 );
-			
-			  
-			  s << "    " << abs(dphi_complex)  ;			  
-
-			  //fact=(n0*(wd-wD)*e*e*dphi/T)/(pow(wR-w0-wD,2)+pow(wI_previous+kz*kz*De,2))
-			  //vire= vi0*(wR_decr)
-			  
-			  // Ion velocity fluctuation
-			  
-			  //vi1 = dphi*(e/mi*kx*(wR_decr-kx*vi0))/(pow(wR_decr-kx*vi0,2)+wI_decr*wI_decr)*sqrt(1+wI_decr*wI_decr/pow(wR_decr-kx*vi0,2));
-			  
-			  vi1_complex = e/mi*kx/(w_incr_complex-kx*vi0)*dphi_complex;
-			  
-			  
-			  s << "      " << abs(vi1_complex) ;
-			  
-			  ve1_complex.real ( -ky_incr/B0*dphi_complex.imag() );
-			  ve1_complex.imag ( ky_incr/B0*dphi_complex.real() );
-			  
-			  s << "      " << abs(ve1_complex) ;
-			  
-			  // Current density fluctuation
-			  
-			  Jxi0 =   e*ne0*vi0;
-			  Jxi1 =   0.5*e*ne0*(ne_over_n0)*std::real(vi1_complex) ;
-			  Jxe1 =  -0.5*e*ne0*(ne_over_n0)*std::real(ve1_complex) ;
-
-			  
-			  s << "      " << Jxi0 << "      " << Jxi1 << "      " << Jxe1 ;
-			  
-			  Ix =  -(Jxi0+Jxi1+Jxe1)*t*2.0*M_PI*R0; //Jxi0*t*2.0*M_PI*R0 + Jxi1*t*2.0*M_PI*R0 + Jxe1*t*2.0*M_PI*R0;
-			  //Ix =  std::real(Jxi0) * Aspoke * my_decr;
-			  
-			  //std::cout << Ix << std::endl;
-			  
-			  s << "      " << Ix ;
-
-			  // density flucuation
-
-			  
-
-			  flag = true;
-
-			  
-			  s << "\n"; 
-			  
-
-	        }
-	
-      }
-      if (flag == false){
-		  std::cout << "Maximum growth rate not found for V = " << E*Ln << " V. ";
-		  std::cout << "Consider increasing lowest voltage or highest mode number" << std::endl;
-		  return 0;
-        }
-	}
+    for( double my = 2.0; my < my_max; my+=my_increment){
+    double ky = my/R0;
     
+    g  << my << "   ";	
+    g  << discharge.wR(ky) << "   ";	
+    g  << discharge.A() << "   ";	
+    g  << discharge.B(ky)	   << "   ";	
+    g  << discharge.C(ky)	   << "   ";	     
+    g  << discharge.wI(ky) << "   ";
+    g  << discharge.alpha(ky) << "   ";
+    g  << discharge.beta(ky) << "   ";
+    g  << discharge.gamma(ky) << "\n";	  
+
+    }
   }
   return 0;
 }
