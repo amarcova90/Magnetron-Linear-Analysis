@@ -1,10 +1,16 @@
 CXX := g++
-CXXFLAGS := -Wall -Wconversion -Wextra -Wpedantic -fsanitize=address -std=c++11
+CXXFLAGS := -O3 -Wall -Wconversion -Wextra -Wpedantic -std=c++11 
 
+TARGET := main
+OBJS := main.o
+INCS := util.hpp linearmodel.hpp
 
-main: main.cpp
-	$(CXX) $(CXXFLAGS) -o main main.cpp
+$(TARGET): $(OBJS)
+	$(CXX)  -o $(TARGET) $(OBJS)
+
+%.o: %.cpp $(INCS)
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
 .PHONY: clean
 clean:
-	$(RM) main
+	$(RM) $(OBJS) $(TARGET) *~ *.o solution.txt w_solution.txt
