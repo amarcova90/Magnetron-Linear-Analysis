@@ -19,35 +19,54 @@ void PrintOutputHeader(std::ofstream& s){
   s <<  "            De [m^2/s]";
   s <<  "               Te [eV]";
   s <<  "          Jxi0 [A/m^2]";
+  s <<  "              Ixi0 [A]"; 
   // decreasing modes values
   s <<  "             m decr []";
   s <<  "           f decr [Hz]";
   s <<  "         dphi decr [V]";
-  s <<  "       vix1 decr [m/s]";
-  s <<  "       vex1 decr [m/s]";
-  s <<  "         dJi1 decr [A]";
-  s <<  "         dJe1 decr [A]";
-  s <<  "    dIix ampl decr [A]";
-  s <<  "    dIex ampl decr [A]";
-  s <<  "       Ix tot decr [A]";  
+  s <<  "        vix decr [m/s]";
+  s <<  "    vex_EXB decr [m/s]";
+  s <<  "      vex_D decr [m/s]";
+  s <<  "     dJix ave decr [A]";
+  s <<  " dJex_EXB ave decr [A]";
+  s <<  "   dJex_D ave decr [A]";
+  s <<  "     dJix amp decr [A]";
+  s <<  " dJex_EXB amp decr [A]";
+  s <<  "   dJex_D amp decr [A]";
+  s <<  "     dIix ave decr [A]";
+  s <<  " dIex_EXB ave decr [A]";
+  s <<  "   dIex_D ave decr [A]";
+  s <<  "     dIix amp decr [A]";
+  s <<  " dIex_EXB amp decr [A]";
+  s <<  "   dIex_D amp decr [A]";
+  s <<  "       Ix tot decr [A]";
   s <<  "        Lbmin decr [m]";
-  s <<  "        A decr [rad/s]";  
-  s <<  "        B decr [rad/s]";  
+  s <<  "        A decr [rad/s]";
+  s <<  "        B decr [rad/s]";
   s <<  "        C decr [rad/s]";
   s <<  "  alpha decr [rad/s]^2";
   s <<  "   beta decr [rad/s]^2";
-  s <<  "  gamma decr [rad/s]^2";  
+  s <<  "  gamma decr [rad/s]^2";
   // increasing modes values
   s <<  "             m incr []";
 	s <<  "           f incr [Hz]";
   s <<  "          dphi incr []";
-  s <<  "       vix1 incr [m/s]";
-  s <<  "       vex1 incr [m/s]";
-  s <<  "         dJi1 incr [A]";
-  s <<  "         dJe1 incr [A]";
-  s <<  "    dIix ampl decr [A]";
-  s <<  "    dIex ampl decr [A]";
-  s <<  "       Ix tot decr [A]"; 
+  s <<  "        vix incr [m/s]";
+  s <<  "    vex_EXB incr [m/s]";
+  s <<  "      vex_D incr [m/s]";
+  s <<  "     dJix ave incr [A]";
+  s <<  " dJex_EXB ave incr [A]";
+  s <<  "   dJex_D ave incr [A]";
+  s <<  "     dJix amp incr [A]";
+  s <<  " dJex_EXB amp incr [A]";
+  s <<  "   dJex_D amp incr [A]";
+  s <<  "     dIix ave incr [A]";
+  s <<  " dIex_EXB ave incr [A]";
+  s <<  "   dIex_D ave incr [A]";
+  s <<  "     dIix amp incr [A]";
+  s <<  " dIex_EXB amp incr [A]";
+  s <<  "   dIex_D amp incr [A]";
+  s <<  "       Ix tot incr [A]"; 
   s <<  "        Lbmin incr [m]";
   s <<  "        A incr [rad/s]";  
   s <<  "        B incr [rad/s]";  
@@ -103,17 +122,23 @@ void ReadDatafromFile(std::ifstream& f, double& mi,     double& Te,
 }
 
 void PrintInputData(std::ofstream& s, double& mi, double& Te, double& B0, 
-               double& R0, double& LB, double& Ln, double& kz, double& kx,
+               double& n0, double& R0, double& LB, double& Ln, 
+               double& kz, double& kx, double& t, double& ne_over_n0,
                unsigned int& N_voltages, unsigned int& N_modes){
   s << "  ion_mass_u                     " << mi / 1.66053892e-27 << "\n";
 	s << "  Te                             " << Te << "\n";
   s << "  B0                             " << B0 << "\n";
+  s << "  n0                             " << n0 << "\n";
+  s << "  ne_over_n0                     " << ne_over_n0 << "\n";
 	s << "  R0                             " << R0 << "\n";
 	s << "  LB                             " << LB << "\n";
 	s << "  Ln                             " << Ln << "\n";
 	s << "  kz                             " << kz << "\n";
 	s << "  kx                             " << kx << "\n";
+  s << "  t                              " << t << "\n";
 	s << "  N_voltages                     " << N_voltages << "\n";
 	s << "  N_modes                        " << N_modes << "\n\n";
 }
+
+
 
