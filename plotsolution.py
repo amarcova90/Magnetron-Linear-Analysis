@@ -19,6 +19,11 @@ v_size = 6
 linesize = 3.0
 linesize_large = 4.0
 
+# subset of modes
+unique_m = (3, 4)
+do_decr = True
+do_incr = False
+
 import numpy as np
 import os
 import sys
@@ -75,16 +80,26 @@ with open(solution_file) as s:
         electron_diffusion = np.zeros(N_voltages, dtype = np.double)
         electron_temperature = np.zeros(N_voltages, dtype = np.double)
         Jxi0 = np.zeros(N_voltages, dtype = np.double)
+        Ixi0 = np.zeros(N_voltages, dtype = np.double)
         # decreasing modes values
         m_decr = np.zeros(N_voltages, dtype = int)	
         frequency_decr = np.zeros(N_voltages, dtype = np.double)
         dphi_decr = np.zeros(N_voltages, dtype = np.double)
         vi1_decr = np.zeros(N_voltages, dtype = np.double)
-        ve1_decr = np.zeros(N_voltages, dtype = np.double)
-        dJi1_decr = np.zeros(N_voltages, dtype = np.double)
-        dJe1_decr = np.zeros(N_voltages, dtype = np.double)
-        dIix_decr = np.zeros(N_voltages, dtype = np.double)
-        dIex_decr = np.zeros(N_voltages, dtype = np.double)
+        ve1_EXB_decr = np.zeros(N_voltages, dtype = np.double)
+        ve1_D_decr = np.zeros(N_voltages, dtype = np.double)
+        dJi1_ave_decr = np.zeros(N_voltages, dtype = np.double)
+        dJe1_EXB_ave_decr = np.zeros(N_voltages, dtype = np.double)
+        dJe1_D_ave_decr = np.zeros(N_voltages, dtype = np.double)
+        dJi1_amp_decr = np.zeros(N_voltages, dtype = np.double)
+        dJe1_EXB_amp_decr = np.zeros(N_voltages, dtype = np.double)
+        dJe1_D_amp_decr = np.zeros(N_voltages, dtype = np.double)        
+        dIix_ave_decr = np.zeros(N_voltages, dtype = np.double)
+        dIex_EXB_ave_decr = np.zeros(N_voltages, dtype = np.double)
+        dIex_D_ave_decr = np.zeros(N_voltages, dtype = np.double)
+        dIix_amp_decr = np.zeros(N_voltages, dtype = np.double)
+        dIex_EXB_amp_decr = np.zeros(N_voltages, dtype = np.double)
+        dIex_D_amp_decr = np.zeros(N_voltages, dtype = np.double)
         Ix_decr = np.zeros(N_voltages, dtype = np.double)
         Lbmin_decr = np.zeros(N_voltages, dtype = np.double)
         A_decr = np.zeros(N_voltages, dtype = np.double)
@@ -98,11 +113,20 @@ with open(solution_file) as s:
         frequency_incr = np.zeros(N_voltages, dtype = np.double)
         dphi_incr = np.zeros(N_voltages, dtype = np.double)
         vi1_incr = np.zeros(N_voltages, dtype = np.double)
-        ve1_incr = np.zeros(N_voltages, dtype = np.double)
-        dJi1_incr = np.zeros(N_voltages, dtype = np.double)
-        dJe1_incr = np.zeros(N_voltages, dtype = np.double)
-        dIix_incr = np.zeros(N_voltages, dtype = np.double)
-        dIex_incr = np.zeros(N_voltages, dtype = np.double)
+        ve1_EXB_incr = np.zeros(N_voltages, dtype = np.double)
+        ve1_D_incr = np.zeros(N_voltages, dtype = np.double)
+        dJi1_ave_incr = np.zeros(N_voltages, dtype = np.double)
+        dJe1_EXB_ave_incr = np.zeros(N_voltages, dtype = np.double)
+        dJe1_D_ave_incr = np.zeros(N_voltages, dtype = np.double)
+        dJi1_amp_incr = np.zeros(N_voltages, dtype = np.double)
+        dJe1_EXB_amp_incr = np.zeros(N_voltages, dtype = np.double)
+        dJe1_D_amp_incr = np.zeros(N_voltages, dtype = np.double)
+        dIix_ave_incr = np.zeros(N_voltages, dtype = np.double)
+        dIex_EXB_ave_incr = np.zeros(N_voltages, dtype = np.double)
+        dIex_D_ave_incr = np.zeros(N_voltages, dtype = np.double)
+        dIix_amp_incr = np.zeros(N_voltages, dtype = np.double)
+        dIex_EXB_amp_incr = np.zeros(N_voltages, dtype = np.double)
+        dIex_D_amp_incr = np.zeros(N_voltages, dtype = np.double)
         Ix_incr = np.zeros(N_voltages, dtype = np.double)
         Lbmin_incr = np.zeros(N_voltages, dtype = np.double)
         A_incr = np.zeros(N_voltages, dtype = np.double)
@@ -116,48 +140,126 @@ with open(solution_file) as s:
       else:
         try:
           # mode independent values
-          temp_value = np.double(temp[0])
+          input_number=0;
+          temp_value = np.double(temp[input_number])
           plasma_potential[i] = temp_value
-          ion_velocity0[i] = np.double(temp[1])
-          electron_diffusion[i] = np.double(temp[2])
-          electron_temperature[i] = np.double(temp[3])
-          Jxi0[i] = np.double(temp[4])
+          input_number+=1
+          ion_velocity0[i] = np.double(temp[input_number])
+          input_number+=1
+          electron_diffusion[i] = np.double(temp[input_number])
+          input_number+=1
+          electron_temperature[i] = np.double(temp[input_number])
+          input_number+=1
+          Jxi0[i] = np.double(temp[input_number])
+          input_number+=1
+          Ixi0[i] = np.double(temp[input_number])
+          input_number+=1
           # decreasing modes values
-          m_decr[i] = np.double(temp[5])
-          frequency_decr[i] = np.double(temp[6])
-          dphi_decr[i] = np.double(temp[7])
-          vi1_decr[i] = np.double(temp[8])
-          ve1_decr[i] = np.double(temp[9])
-          dJi1_decr[i] = np.double(temp[10])
-          dJe1_decr[i] = np.double(temp[11])
-          dIix_decr[i] = np.double(temp[12])
-          dIex_decr[i] = np.double(temp[13])
-          Ix_decr[i] = np.double(temp[14])
-          Lbmin_decr[i] = np.double(temp[15])
-          A_decr[i] = np.double(temp[16])
-          B_decr[i] = np.double(temp[17])
-          C_decr[i] = np.double(temp[18])
-          alpha_decr[i] = np.double(temp[19])
-          beta_decr[i] = np.double(temp[20])
-          gamma_decr[i] = np.double(temp[21])
+          m_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          frequency_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          dphi_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          vi1_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          ve1_EXB_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          ve1_D_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          dJi1_ave_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          dJe1_EXB_ave_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          dJe1_D_ave_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          dJi1_amp_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          dJe1_EXB_amp_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          dJe1_D_amp_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          dIix_ave_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          dIex_EXB_ave_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          dIex_D_ave_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          dIix_amp_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          dIex_EXB_amp_decr[i] = np.double(temp[input_number])          
+          input_number+=1
+          dIex_D_amp_decr[i] = np.double(temp[input_number])          
+          input_number+=1          
+          Ix_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          Lbmin_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          A_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          B_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          C_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          alpha_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          beta_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          gamma_decr[i] = np.double(temp[input_number])
+          input_number+=1
           # increasing modes values
-          m_incr[i] = np.double(temp[22])
-          frequency_incr[i] = np.double(temp[23])
-          dphi_incr[i] = np.double(temp[24])
-          vi1_incr[i] = np.double(temp[25])
-          ve1_incr[i] = np.double(temp[26])
-          dJi1_incr[i] = np.double(temp[27])
-          dJe1_incr[i] = np.double(temp[28])
-          dIix_incr[i] = np.double(temp[29])
-          dIex_incr[i] = np.double(temp[30])
-          Ix_incr[i] = np.double(temp[31])
-          Lbmin_incr[i] = np.double(temp[32])
-          A_incr[i] = np.double(temp[33])
-          B_incr[i] = np.double(temp[34])
-          C_incr[i] = np.double(temp[35])
-          alpha_incr[i] = np.double(temp[36])
-          beta_incr[i] = np.double(temp[37])
-          gamma_incr[i] = np.double(temp[38])
+          m_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          frequency_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          dphi_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          vi1_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          ve1_EXB_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          ve1_D_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          dJi1_ave_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          dJe1_EXB_ave_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          dJe1_D_ave_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          dJi1_amp_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          dJe1_EXB_amp_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          dJe1_D_amp_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          dIix_ave_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          dIex_EXB_ave_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          dIex_D_ave_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          dIix_amp_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          dIex_EXB_amp_incr[i] = np.double(temp[input_number]) 
+          input_number+=1
+          dIex_D_amp_incr[i] = np.double(temp[input_number]) 
+          input_number+=1
+          Ix_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          Lbmin_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          A_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          B_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          C_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          alpha_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          beta_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          gamma_incr[i] = np.double(temp[input_number])
+          input_number+=1
           i = i + 1
         except(ValueError):
           pass
@@ -195,8 +297,6 @@ if isexperiment:
     voltage_shift = np.double(lines[-1].split()[0])
 
 	
-#unique_m = set(list(set(m_decr)) + list(set(m_incr)))
-unique_m = (2, 3, 4, 5, 6, 7, 8)
 legend_list=[]
 colors = {np.nan: 'k', 2: (0.6350, 0.0780, 0.1840),3: (0, 0.4470, 0.7410),4: (0.8500, 0.3250, 0.0980), 5: (0.9290, 0.6940, 0.1250), 6: (0.4940, 0.1840, 0.5560), 1: (0.4660, 0.6740, 0.1880), 7 : (0.3010, 0.7450, 0.9330), 8 : (1 , 0, 0)}
 
@@ -207,20 +307,22 @@ if not os.path.isdir(results_dir):
 	
 plt.figure(1,figsize=(h_size, v_size))
 for mode in unique_m:
-  if mode in m_decr:
+  if mode in m_decr and do_decr:
     plt.plot(plasma_potential[m_decr == mode],frequency_decr[m_decr == mode]/1000,color=colors[mode], linewidth = linesize)
     legend_list = legend_list + ["m$_{decr}$ = " + str(mode)]                                       
-  if mode in m_incr:                                                                                  
+  if mode in m_incr and do_incr:                                                                                  
     plt.plot(plasma_potential[m_incr == mode],frequency_incr[m_incr == mode]/1000,'--',color = colors[mode], linewidth = linesize)	
     legend_list = legend_list + ["m$_{incr}$ = " + str(mode)]                                       
 
 if isexperiment:
-  for mode in set(mode_number_exp_decr[~np.isnan(mode_number_exp_decr)]):
-    plt.plot(abs(gap_voltage_exp_decr[mode_number_exp_decr == mode])-voltage_shift,frequency_exp_decr[mode_number_exp_decr == mode]/1000,'v',color = colors[mode])	
-    legend_list = legend_list + ["m$_{decr}$ = " + str(int(mode))]
-  for mode in set(mode_number_exp_incr[~np.isnan(mode_number_exp_incr)]):
-    plt.plot(abs(gap_voltage_exp_incr[mode_number_exp_incr == mode])-voltage_shift,frequency_exp_incr[mode_number_exp_incr == mode]/1000,'^',color = colors[mode])	
-    legend_list = legend_list + ["m$_{incr}$ = " + str(int(mode))]
+  if do_decr:
+    for mode in set(mode_number_exp_decr[~np.isnan(mode_number_exp_decr)]):
+      plt.plot(abs(gap_voltage_exp_decr[mode_number_exp_decr == mode])-voltage_shift,frequency_exp_decr[mode_number_exp_decr == mode]/1000,'v',markersize=10,color = colors[mode])	
+      legend_list = legend_list + ["m$_{decr}$ = " + str(int(mode))]
+  if do_incr:
+    for mode in set(mode_number_exp_incr[~np.isnan(mode_number_exp_incr)]):
+      plt.plot(abs(gap_voltage_exp_incr[mode_number_exp_incr == mode])-voltage_shift,frequency_exp_incr[mode_number_exp_incr == mode]/1000,'^',markersize=10,color = colors[mode])	
+      legend_list = legend_list + ["m$_{incr}$ = " + str(int(mode))]
 #Axes.ticklabel_format(self, *, axis='both', style='', scilimits=None, useOffset=None, useLocale=None, useMathText=None)
 	
 #ax1.set_aspect('equal')	
@@ -237,20 +339,22 @@ plt.savefig(results_dir+"f_vs_EL.png")
 plt.figure(2,figsize=(h_size, v_size))
 legend_list=[]
 for mode in unique_m:
-  if mode in m_decr:
+  if mode in m_decr and do_decr:
     plt.plot(plasma_potential[m_decr == mode],Ix_decr[m_decr == mode]*1000,color=colors[mode], linewidth = linesize)
     legend_list = legend_list + ["m$_{decr}$ = " + str(mode)] 
-  if mode in m_incr:
+  if mode in m_incr and do_incr:
     plt.plot(plasma_potential[m_incr == mode],Ix_incr[m_incr == mode]*1000,'--',color = colors[mode], linewidth = linesize)	
     legend_list = legend_list + ["m$_{incr}$ = " + str(mode)]
 
 if isexperiment:
-  for mode in set(mode_number_exp_decr[~np.isnan(mode_number_exp_decr)]):
-    plt.plot(abs(gap_voltage_exp_decr[mode_number_exp_decr == mode])-voltage_shift,gap_current_exp_decr[mode_number_exp_decr == mode],'v',color = colors[mode])	
-    legend_list = legend_list + ["m$_{decr}$ = " + str(int(mode))]
-  for mode in set(mode_number_exp_incr[~np.isnan(mode_number_exp_incr)]):
-    plt.plot(abs(gap_voltage_exp_incr[mode_number_exp_incr == mode])-voltage_shift,gap_current_exp_incr[mode_number_exp_incr == mode],'^',color = colors[mode])	
-    legend_list = legend_list + ["m$_{incr}$ = " + str(int(mode))]
+  if do_decr:
+    for mode in set(mode_number_exp_decr[~np.isnan(mode_number_exp_decr)]):
+      plt.plot(abs(gap_voltage_exp_decr[mode_number_exp_decr == mode])-voltage_shift,gap_current_exp_decr[mode_number_exp_decr == mode],'v',markersize=10,color = colors[mode])	
+      legend_list = legend_list + ["m$_{decr}$ = " + str(int(mode))]
+  if do_incr:
+    for mode in set(mode_number_exp_incr[~np.isnan(mode_number_exp_incr)]):
+      plt.plot(abs(gap_voltage_exp_incr[mode_number_exp_incr == mode])-voltage_shift,gap_current_exp_incr[mode_number_exp_incr == mode],'^',markersize=10,color = colors[mode])	
+      legend_list = legend_list + ["m$_{incr}$ = " + str(int(mode))]
 
 
 plt.legend(legend_list, fancybox = False, edgecolor = 'k' )
@@ -264,10 +368,10 @@ plt.savefig(results_dir+"I_vs_EL.eps")
 plt.figure(3,figsize=(h_size, v_size))
 legend_list=[]
 for mode in unique_m:
-  if mode in m_decr:
+  if mode in m_decr and do_decr:
     plt.plot(plasma_potential[m_decr == mode],dphi_decr[m_decr == mode],color=colors[mode], linewidth = linesize)
     legend_list = legend_list + ["m$_{decr}$ = " + str(mode)] 
-  if mode in m_incr:
+  if mode in m_incr and do_incr:
     plt.plot(plasma_potential[m_incr == mode],dphi_incr[m_incr == mode],'--',color = colors[mode], linewidth = linesize)	
     legend_list = legend_list + ["m$_{incr}$ = " + str(mode)]
 
@@ -283,10 +387,10 @@ plt.figure(4,figsize=(h_size, v_size))
 legend_list=[]
 
 for mode in unique_m:
-  if mode in m_decr:
+  if mode in m_decr and do_decr:
     plt.plot(plasma_potential[m_decr == mode],vi1_decr[m_decr == mode],color=colors[mode], linewidth = linesize)
     legend_list = legend_list + ["m$_{decr}$ = " + str(mode)] 
-  if mode in m_incr:
+  if mode in m_incr and do_incr:
     plt.plot(plasma_potential[m_incr == mode],vi1_incr[m_incr == mode],'--',color = colors[mode], linewidth = linesize)	
     legend_list = legend_list + ["m$_{incr}$ = " + str(mode)]
 
@@ -302,7 +406,7 @@ plt.savefig(results_dir+"vi1_vs_EL.eps")
 plt.figure(5,figsize=(h_size*1.05, v_size))
 legend_list=[]
 for mode in unique_m:
-  if mode in m_decr:
+  if mode in m_decr and do_decr:
     plt.plot(plasma_potential[m_decr == mode],frequency_decr[m_decr == mode]*2*np.pi,color=colors[mode], linewidth = linesize_large)
     legend_list = legend_list + ["m = " + str(mode)] 
     plt.plot(plasma_potential[m_decr == mode],A_decr[m_decr == mode],'--',color=colors[mode], linewidth = linesize)
@@ -332,7 +436,7 @@ plt.savefig(results_dir+"wR_vs_EL_decr_comparison.eps", additional_artists = art
 plt.figure(6,figsize=(h_size, v_size))
 legend_list=[]
 for mode in unique_m:
-  if mode in m_incr:
+  if mode in m_incr and do_incr:
     plt.plot(plasma_potential[m_incr == mode],frequency_incr[m_incr == mode]*2*np.pi,color=colors[mode], linewidth = linesize_large)
     legend_list = legend_list + ["m$_{incr}$ = " + str(mode)] 
     plt.plot(plasma_potential[m_incr == mode],A_incr[m_incr == mode],'--',color=colors[mode], linewidth = linesize)
