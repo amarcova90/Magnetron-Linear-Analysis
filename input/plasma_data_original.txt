@@ -3,11 +3,11 @@ Te                        2.79
 B0                        0.6
 E0                        -1.05e4
 R0                        2.5e-3
-plasma_thickness          1.0e-3
+plasma_thickness          0.5e-3
 LB                        .5e-3
 Ln                        2e-3
 n0                        1e18
-dne_over_n0        	  1.0	
+dne_over_n0        	       1.0	
 electron_diffusion        .135
 vix                       -890	
 lambda_z                  2.5e-3
