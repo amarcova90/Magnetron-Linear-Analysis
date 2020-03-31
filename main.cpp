@@ -28,7 +28,7 @@ int main(int argc, char *argv[]){
   
   std::ofstream s("solution.txt");  
   PrintInputHeader(s);
-  PrintInputData(s,mi,Te,B0,R0,LB,Ln,kz,kx,N_voltages,N_modes);
+  PrintInputData(s,mi,Te,B0,n0,R0,LB,Ln,kz,kx,t,ne_over_n0,N_voltages,N_modes);
   PrintOutputHeader(s);
   s.setf(std::ios::scientific, std::ios::floatfield);
   s.precision(4);  

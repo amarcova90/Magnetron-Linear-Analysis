@@ -91,48 +91,68 @@ class LinearModel{
     return dne_over_n0*T*((w_incr-w0-wD)+i1*(kz*kz*De))/(wd-wD) ;
   }  
   
-  std::complex<double> dvix1_decr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvxi1_decr(const std::complex<double>& dne_over_n0){     
     return  e/mi*kx/(w_decr-kx*vi0)*dphi_decr(dne_over_n0);
   }   
 
-  std::complex<double> dvix1_incr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvxi1_incr(const std::complex<double>& dne_over_n0){     
     return  e/mi*kx/(w_incr-kx*vi0)*dphi_incr(dne_over_n0);
   }   
 
-  std::complex<double> dviy1_decr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvyi1_decr(const std::complex<double>& dne_over_n0){     
     return  e/mi*my_decr/R0/(w_decr-kx*vi0)*dphi_decr(dne_over_n0);
   } 
 
-  std::complex<double> dviy1_incr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvyi1_incr(const std::complex<double>& dne_over_n0){     
     return  e/mi*my_incr/R0/(w_incr-kx*vi0)*dphi_incr(dne_over_n0);
   }
 
-  std::complex<double> dvex1_decr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvxe1_EXB_decr(const std::complex<double>& dne_over_n0){     
     return  -my_decr/R0*dphi_decr(dne_over_n0)/B0;
   }  
 
-  std::complex<double> dvex1_incr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvxe1_EXB_incr(const std::complex<double>& dne_over_n0){     
     return  -my_incr/R0*dphi_incr(dne_over_n0)/B0;
   }  
 
+  std::complex<double> dvxe1_D_decr(const std::complex<double>& dne_over_n0){     
+    return  T/B0*my_decr/R0*dne_over_n0;
+  }
+  std::complex<double> dvxe1_D_incr(const std::complex<double>& dne_over_n0){     
+    return  T/B0*my_incr/R0*dne_over_n0;
+  }
   double Jxi0() const{ return e*ne0*vi0;}
   double Ixi0() const{ return Jxi0()*A_plasma;}
   
-  double Jxi1_decr(const std::complex<double>& dne_over_n0){ 
-    return 0.5*e*ne0*std::real(dne_over_n0*std::conj(dvix1_decr(dne_over_n0)));
+  double Jxi1_ave_decr(const std::complex<double>& dne_over_n0){ 
+    return 0.5*e*ne0*std::real(dne_over_n0*std::conj(dvxi1_decr(dne_over_n0)));
   }
-  double Jxi1_incr(const std::complex<double>& dne_over_n0){ 
-    return 0.5*e*ne0*std::real(dne_over_n0*std::conj(dvix1_incr(dne_over_n0)));
+  double Jxi1_ave_incr(const std::complex<double>& dne_over_n0){ 
+    return 0.5*e*ne0*std::real(dne_over_n0*std::conj(dvxi1_incr(dne_over_n0)));
   }
 
-  double Ixi1_decr(const std::complex<double>& dne_over_n0){ 
-    return Jxi1_decr(dne_over_n0)*A_plasma;
+  double Jxi1_amp_decr(const std::complex<double>& dne_over_n0){ 
+    return e*ne0*std::abs(dne_over_n0*dvxi1_decr(dne_over_n0));
   }
-  double Ixi1_incr(const std::complex<double>& dne_over_n0){ 
-    return Jxi1_incr(dne_over_n0)*A_plasma;
+  double Jxi1_amp_incr(const std::complex<double>& dne_over_n0){ 
+    return e*ne0*std::abs(dne_over_n0*dvxi1_incr(dne_over_n0));
   }
   
-  double Jxe1_decr(const std::complex<double>& dne_over_n0){
+  double Ixi1_ave_decr(const std::complex<double>& dne_over_n0){ 
+    return Jxi1_ave_decr(dne_over_n0)*A_plasma;
+  }
+  double Ixi1_ave_incr(const std::complex<double>& dne_over_n0){ 
+    return Jxi1_ave_incr(dne_over_n0)*A_plasma;
+  }
+  
+  double Ixi1_amp_decr(const std::complex<double>& dne_over_n0){ 
+    return Jxi1_amp_decr(dne_over_n0)*A_plasma;
+  }
+  double Ixi1_amp_incr(const std::complex<double>& dne_over_n0){ 
+    return Jxi1_amp_incr(dne_over_n0)*A_plasma;
+  }
+  
+  double Jxe1_EXB_ave_decr(const std::complex<double>& dne_over_n0){
 //  The following commented code compares the return value to the equation
 //  in the paper and leads to the same result. The equation in the paper is 
 //  for real dne_over_n0, so this method is more general.
@@ -142,29 +162,69 @@ class LinearModel{
     double w0 = v0*my_decr/R0;    
     double eta = (w_decr.real()-w0-wD)/(wd-wD);
     double expl = 0.5*(ne0*my_decr*T*e*eta)/(B0*R0)*dne_over_n0.real()*dne_over_n0.real();
-    double nonexpl = -0.5*e*ne0*std::real(dne_over_n0*std::conj(dvex1_decr(dne_over_n0)));
+    double nonexpl = -0.5*e*ne0*std::real(dne_over_n0*std::conj(dvxe1_EXB_decr(dne_over_n0)));
     double paper_estim = 0.5*(ne0*my_decr*T*e*eta)/(B0*R0)*dne_over_n0.real()*dne_over_n0.real()*A_plasma;
     std::cout << paper_estim << " " << nonexpl*A_plasma << " " << expl*A_plasma << std::endl;
  */ 
  
-    return -0.5*e*ne0*std::real(dne_over_n0*std::conj(dvex1_decr(dne_over_n0)));
+    return -0.5*e*ne0*std::real(dne_over_n0*std::conj(dvxe1_EXB_decr(dne_over_n0)));
   }
-  double Jxe1_incr(const std::complex<double>& dne_over_n0){
-    return -0.5*e*ne0*std::real(dne_over_n0*std::conj(dvex1_incr(dne_over_n0)));
+  double Jxe1_EXB_ave_incr(const std::complex<double>& dne_over_n0){
+    return -0.5*e*ne0*std::real(dne_over_n0*std::conj(dvxe1_EXB_incr(dne_over_n0)));
   }
 
-  double Ixe1_decr(const std::complex<double>& dne_over_n0){
-    return Jxe1_decr(dne_over_n0)*A_plasma;
+  double Jxe1_EXB_amp_decr(const std::complex<double>& dne_over_n0){ 
+    return e*ne0*std::abs(dne_over_n0*dvxe1_EXB_decr(dne_over_n0));
   }
-  double Ixe1_incr(const std::complex<double>& dne_over_n0){
-    return Jxe1_incr(dne_over_n0)*A_plasma;
+  double Jxe1_EXB_amp_incr(const std::complex<double>& dne_over_n0){ 
+    return e*ne0*std::abs(dne_over_n0*dvxe1_EXB_incr(dne_over_n0));
+  }
+  
+  double Ixe1_EXB_ave_decr(const std::complex<double>& dne_over_n0){
+    return Jxe1_EXB_ave_decr(dne_over_n0)*A_plasma;
+  }
+  double Ixe1_EXB_ave_incr(const std::complex<double>& dne_over_n0){
+    return Jxe1_EXB_ave_incr(dne_over_n0)*A_plasma;
+  }
+
+  double Ixe1_EXB_amp_decr(const std::complex<double>& dne_over_n0){
+    return Jxe1_EXB_amp_decr(dne_over_n0)*A_plasma;
+  }
+  double Ixe1_EXB_amp_incr(const std::complex<double>& dne_over_n0){
+    return Jxe1_EXB_amp_incr(dne_over_n0)*A_plasma;
+  }
+  
+  double Jxe1_D_ave_decr(const std::complex<double>& dne_over_n0){
+    return 0.5*e*ne0*std::real(dne_over_n0*std::conj(dvxe1_D_decr(dne_over_n0)));
+  }
+  double Jxe1_D_amp_decr(const std::complex<double>& dne_over_n0){
+    return e*ne0*std::abs(dne_over_n0*dvxe1_D_decr(dne_over_n0));
+  }
+  double Jxe1_D_ave_incr(const std::complex<double>& dne_over_n0){
+    return 0.5*e*ne0*std::real(dne_over_n0*std::conj(dvxe1_D_incr(dne_over_n0)));
+  }
+  double Jxe1_D_amp_incr(const std::complex<double>& dne_over_n0){
+    return e*ne0*std::abs(dne_over_n0*dvxe1_D_incr(dne_over_n0));
+  }
+  
+  double Ixe1_D_ave_decr(const std::complex<double>& dne_over_n0){
+    return Jxe1_D_ave_decr(dne_over_n0)*A_plasma;
+  }
+  double Ixe1_D_amp_decr(const std::complex<double>& dne_over_n0){
+    return Jxe1_D_amp_decr(dne_over_n0)*A_plasma;
+  }
+  double Ixe1_D_ave_incr(const std::complex<double>& dne_over_n0){
+    return Jxe1_D_ave_incr(dne_over_n0)*A_plasma;
+  }
+  double Ixe1_D_amp_incr(const std::complex<double>& dne_over_n0){
+    return Jxe1_D_amp_incr(dne_over_n0)*A_plasma;
   }
   
   double Ix_decr(const std::complex<double>& dne_over_n0){
-    return Ixi0()+Ixi1_decr(dne_over_n0)+Ixe1_decr(dne_over_n0);
+    return Ixi0()+Ixe1_D_ave_decr(dne_over_n0)+Ixi1_ave_decr(dne_over_n0)+Ixe1_EXB_ave_decr(dne_over_n0);
   }
   double Ix_incr(const std::complex<double>& dne_over_n0){
-    return Ixi0()+Ixi1_incr(dne_over_n0)+Ixe1_incr(dne_over_n0);
+    return Ixi0()+Ixe1_D_ave_incr(dne_over_n0)+Ixi1_ave_incr(dne_over_n0)+Ixe1_EXB_ave_incr(dne_over_n0);
   }  
  
   double LB_limit_decr(){
@@ -184,16 +244,26 @@ class LinearModel{
     s << get_De() << std::setw(width);
     s << get_T() << std::setw(width);
     s << Jxi0() << std::setw(width);
+    s << Ixi0() << std::setw(width);
   // decreasing modes values    
     s << get_my_decr() << std::setw(width);
     s << get_wR_decr()/2/M_PI << std::setw(width);
     s << std::abs(dphi_decr(dne_over_n0)) << std::setw(width);
-    s << std::abs(dvix1_decr(dne_over_n0)) << std::setw(width); 
-    s << std::abs(dvex1_decr(dne_over_n0)) << std::setw(width);
-    s << Jxi1_decr(dne_over_n0) << std::setw(width);
-    s << Jxe1_decr(dne_over_n0) << std::setw(width);
-    s << Ixi1_decr(dne_over_n0) << std::setw(width);
-    s << Ixe1_decr(dne_over_n0) << std::setw(width);
+    s << std::abs(dvxi1_decr(dne_over_n0)) << std::setw(width); 
+    s << std::abs(dvxe1_EXB_decr(dne_over_n0)) << std::setw(width);
+    s << std::abs(dvxe1_D_decr(dne_over_n0)) << std::setw(width);
+    s << Jxi1_ave_decr(dne_over_n0) << std::setw(width);
+    s << Jxe1_EXB_ave_decr(dne_over_n0) << std::setw(width);
+    s << Jxe1_D_ave_decr(dne_over_n0) << std::setw(width);
+    s << Jxi1_amp_decr(dne_over_n0) << std::setw(width);
+    s << Jxe1_EXB_amp_decr(dne_over_n0) << std::setw(width);  
+    s << Jxe1_D_amp_decr(dne_over_n0) << std::setw(width);      
+    s << Ixi1_ave_decr(dne_over_n0) << std::setw(width);
+    s << Ixe1_EXB_ave_decr(dne_over_n0) << std::setw(width);
+    s << Ixe1_D_ave_decr(dne_over_n0) << std::setw(width);
+    s << Ixi1_amp_decr(dne_over_n0) << std::setw(width);
+    s << Ixe1_EXB_amp_decr(dne_over_n0) << std::setw(width); 
+    s << Ixe1_D_amp_decr(dne_over_n0) << std::setw(width);     
     s << Ix_decr(dne_over_n0) << std::setw(width);
     s << LB_limit_decr() << std::setw(width);
     s << A() << std::setw(width);
@@ -206,12 +276,21 @@ class LinearModel{
     s << get_my_incr() << std::setw(width);
     s << get_wR_incr()/2/M_PI << std::setw(width);
     s << std::abs(dphi_incr(dne_over_n0)) << std::setw(width);
-    s << std::abs(dvix1_incr(dne_over_n0)) << std::setw(width); 
-    s << std::abs(dvex1_incr(dne_over_n0)) << std::setw(width);    
-    s << Jxi1_incr(dne_over_n0) << std::setw(width);
-    s << Jxe1_incr(dne_over_n0) << std::setw(width);
-    s << Ixi1_incr(dne_over_n0) << std::setw(width);
-    s << Ixe1_incr(dne_over_n0) << std::setw(width);
+    s << std::abs(dvxi1_incr(dne_over_n0)) << std::setw(width); 
+    s << std::abs(dvxe1_EXB_incr(dne_over_n0)) << std::setw(width);  
+    s << std::abs(dvxe1_D_incr(dne_over_n0)) << std::setw(width);      
+    s << Jxi1_ave_incr(dne_over_n0) << std::setw(width);
+    s << Jxe1_EXB_ave_incr(dne_over_n0) << std::setw(width);
+    s << Jxe1_D_ave_incr(dne_over_n0) << std::setw(width);
+    s << Jxi1_amp_incr(dne_over_n0) << std::setw(width);
+    s << Jxe1_EXB_amp_incr(dne_over_n0) << std::setw(width);  
+    s << Jxe1_D_amp_incr(dne_over_n0) << std::setw(width);      
+    s << Ixi1_ave_incr(dne_over_n0) << std::setw(width);
+    s << Ixe1_EXB_ave_incr(dne_over_n0) << std::setw(width);
+    s << Ixe1_D_ave_incr(dne_over_n0) << std::setw(width);
+    s << Ixi1_amp_incr(dne_over_n0) << std::setw(width);
+    s << Ixe1_EXB_amp_incr(dne_over_n0) << std::setw(width); 
+    s << Ixe1_D_amp_incr(dne_over_n0) << std::setw(width);     
     s << Ix_incr(dne_over_n0) << std::setw(width);
     s << LB_limit_incr() << std::setw(width);
     s << A() << std::setw(width);
