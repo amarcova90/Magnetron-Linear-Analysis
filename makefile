@@ -13,4 +13,6 @@ $(TARGET): $(OBJS)
 
 .PHONY: clean
 clean:
-	$(RM) $(OBJS) $(TARGET) *~ *.o solution.txt w_solution.txt
+	$(RM) $(OBJS) $(TARGET) *~ *.o solution.txt \
+  w_solution.txt solution_figures/*.eps solution_figures/*.png \
+  solution_movies/*mp4
