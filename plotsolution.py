@@ -2,6 +2,9 @@ import matplotlib.font_manager
 matplotlib.font_manager.findSystemFonts(fontpaths=None, fontext='ttf')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib.animation as animation
+import scipy.integrate as integrate
+
 formatter = ticker.ScalarFormatter(useMathText=True) #scientific notation
 formatter.set_scientific(True) 
 formatter.set_powerlimits((-1,1)) 
@@ -64,6 +67,9 @@ with open(solution_file) as s:
         B0 = np.double(temp[1])
       elif temp[0] == "R0":
         R0 = np.double(temp[1])
+      elif temp[0] == "plasma_thickness":
+        plasma_thickness = np.double(temp[1])
+        A_plasma = 2*np.pi*R0*plasma_thickness;
       elif temp[0] == "LB":
         LB = np.double(temp[1])
       elif temp[0] == "Ln":
@@ -76,6 +82,7 @@ with open(solution_file) as s:
         N_voltages = int(temp[1])
         # mode independent values
         plasma_potential = np.zeros(N_voltages, dtype = np.double)
+        ne0 = np.zeros(N_voltages, dtype = np.double)
         ion_velocity0 = np.zeros(N_voltages, dtype = np.double)
         electron_diffusion = np.zeros(N_voltages, dtype = np.double)
         electron_temperature = np.zeros(N_voltages, dtype = np.double)
@@ -88,18 +95,18 @@ with open(solution_file) as s:
         vi1_decr = np.zeros(N_voltages, dtype = np.double)
         ve1_EXB_decr = np.zeros(N_voltages, dtype = np.double)
         ve1_D_decr = np.zeros(N_voltages, dtype = np.double)
+        
+        dphi_phase_decr = np.zeros(N_voltages, dtype = np.double)
+        vi1_phase_decr = np.zeros(N_voltages, dtype = np.double)
+        ve1_EXB_phase_decr = np.zeros(N_voltages, dtype = np.double)
+        ve1_D_phase_decr = np.zeros(N_voltages, dtype = np.double)
+        
         dJi1_ave_decr = np.zeros(N_voltages, dtype = np.double)
         dJe1_EXB_ave_decr = np.zeros(N_voltages, dtype = np.double)
-        dJe1_D_ave_decr = np.zeros(N_voltages, dtype = np.double)
-        dJi1_amp_decr = np.zeros(N_voltages, dtype = np.double)
-        dJe1_EXB_amp_decr = np.zeros(N_voltages, dtype = np.double)
-        dJe1_D_amp_decr = np.zeros(N_voltages, dtype = np.double)        
+        dJe1_D_ave_decr = np.zeros(N_voltages, dtype = np.double)       
         dIix_ave_decr = np.zeros(N_voltages, dtype = np.double)
         dIex_EXB_ave_decr = np.zeros(N_voltages, dtype = np.double)
         dIex_D_ave_decr = np.zeros(N_voltages, dtype = np.double)
-        dIix_amp_decr = np.zeros(N_voltages, dtype = np.double)
-        dIex_EXB_amp_decr = np.zeros(N_voltages, dtype = np.double)
-        dIex_D_amp_decr = np.zeros(N_voltages, dtype = np.double)
         Ix_decr = np.zeros(N_voltages, dtype = np.double)
         Lbmin_decr = np.zeros(N_voltages, dtype = np.double)
         A_decr = np.zeros(N_voltages, dtype = np.double)
@@ -115,18 +122,18 @@ with open(solution_file) as s:
         vi1_incr = np.zeros(N_voltages, dtype = np.double)
         ve1_EXB_incr = np.zeros(N_voltages, dtype = np.double)
         ve1_D_incr = np.zeros(N_voltages, dtype = np.double)
+        
+        dphi_phase_incr = np.zeros(N_voltages, dtype = np.double)
+        vi1_phase_incr = np.zeros(N_voltages, dtype = np.double)
+        ve1_EXB_phase_incr = np.zeros(N_voltages, dtype = np.double)
+        ve1_D_phase_incr = np.zeros(N_voltages, dtype = np.double)
+        
         dJi1_ave_incr = np.zeros(N_voltages, dtype = np.double)
         dJe1_EXB_ave_incr = np.zeros(N_voltages, dtype = np.double)
         dJe1_D_ave_incr = np.zeros(N_voltages, dtype = np.double)
-        dJi1_amp_incr = np.zeros(N_voltages, dtype = np.double)
-        dJe1_EXB_amp_incr = np.zeros(N_voltages, dtype = np.double)
-        dJe1_D_amp_incr = np.zeros(N_voltages, dtype = np.double)
         dIix_ave_incr = np.zeros(N_voltages, dtype = np.double)
         dIex_EXB_ave_incr = np.zeros(N_voltages, dtype = np.double)
         dIex_D_ave_incr = np.zeros(N_voltages, dtype = np.double)
-        dIix_amp_incr = np.zeros(N_voltages, dtype = np.double)
-        dIex_EXB_amp_incr = np.zeros(N_voltages, dtype = np.double)
-        dIex_D_amp_incr = np.zeros(N_voltages, dtype = np.double)
         Ix_incr = np.zeros(N_voltages, dtype = np.double)
         Lbmin_incr = np.zeros(N_voltages, dtype = np.double)
         A_incr = np.zeros(N_voltages, dtype = np.double)
@@ -144,6 +151,8 @@ with open(solution_file) as s:
           temp_value = np.double(temp[input_number])
           plasma_potential[i] = temp_value
           input_number+=1
+          ne0[i] = np.double(temp[input_number])
+          input_number+=1          
           ion_velocity0[i] = np.double(temp[input_number])
           input_number+=1
           electron_diffusion[i] = np.double(temp[input_number])
@@ -167,30 +176,28 @@ with open(solution_file) as s:
           input_number+=1
           ve1_D_decr[i] = np.double(temp[input_number])
           input_number+=1
+          
+          dphi_phase_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          vi1_phase_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          ve1_EXB_phase_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          ve1_D_phase_decr[i] = np.double(temp[input_number])
+          input_number+=1
+          
           dJi1_ave_decr[i] = np.double(temp[input_number])
           input_number+=1
           dJe1_EXB_ave_decr[i] = np.double(temp[input_number])
           input_number+=1
           dJe1_D_ave_decr[i] = np.double(temp[input_number])
           input_number+=1
-          dJi1_amp_decr[i] = np.double(temp[input_number])
-          input_number+=1
-          dJe1_EXB_amp_decr[i] = np.double(temp[input_number])
-          input_number+=1
-          dJe1_D_amp_decr[i] = np.double(temp[input_number])
-          input_number+=1
           dIix_ave_decr[i] = np.double(temp[input_number])
           input_number+=1
           dIex_EXB_ave_decr[i] = np.double(temp[input_number])
           input_number+=1
           dIex_D_ave_decr[i] = np.double(temp[input_number])
-          input_number+=1
-          dIix_amp_decr[i] = np.double(temp[input_number])
-          input_number+=1
-          dIex_EXB_amp_decr[i] = np.double(temp[input_number])          
-          input_number+=1
-          dIex_D_amp_decr[i] = np.double(temp[input_number])          
-          input_number+=1          
+          input_number+=1       
           Ix_decr[i] = np.double(temp[input_number])
           input_number+=1
           Lbmin_decr[i] = np.double(temp[input_number])
@@ -220,29 +227,27 @@ with open(solution_file) as s:
           input_number+=1
           ve1_D_incr[i] = np.double(temp[input_number])
           input_number+=1
+          
+          dphi_phase_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          vi1_phase_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          ve1_EXB_phase_incr[i] = np.double(temp[input_number])
+          input_number+=1
+          ve1_D_phase_incr[i] = np.double(temp[input_number])
+          input_number+=1
+ 
           dJi1_ave_incr[i] = np.double(temp[input_number])
           input_number+=1
           dJe1_EXB_ave_incr[i] = np.double(temp[input_number])
           input_number+=1
           dJe1_D_ave_incr[i] = np.double(temp[input_number])
           input_number+=1
-          dJi1_amp_incr[i] = np.double(temp[input_number])
-          input_number+=1
-          dJe1_EXB_amp_incr[i] = np.double(temp[input_number])
-          input_number+=1
-          dJe1_D_amp_incr[i] = np.double(temp[input_number])
-          input_number+=1
           dIix_ave_incr[i] = np.double(temp[input_number])
           input_number+=1
           dIex_EXB_ave_incr[i] = np.double(temp[input_number])
           input_number+=1
           dIex_D_ave_incr[i] = np.double(temp[input_number])
-          input_number+=1
-          dIix_amp_incr[i] = np.double(temp[input_number])
-          input_number+=1
-          dIex_EXB_amp_incr[i] = np.double(temp[input_number]) 
-          input_number+=1
-          dIex_D_amp_incr[i] = np.double(temp[input_number]) 
           input_number+=1
           Ix_incr[i] = np.double(temp[input_number])
           input_number+=1
@@ -301,9 +306,14 @@ legend_list=[]
 colors = {np.nan: 'k', 2: (0.6350, 0.0780, 0.1840),3: (0, 0.4470, 0.7410),4: (0.8500, 0.3250, 0.0980), 5: (0.9290, 0.6940, 0.1250), 6: (0.4940, 0.1840, 0.5560), 1: (0.4660, 0.6740, 0.1880), 7 : (0.3010, 0.7450, 0.9330), 8 : (1 , 0, 0)}
 
 script_dir = os.path.dirname(__file__)
-results_dir = os.path.join(script_dir, solution_file[:-4] + '_figures/')
-if not os.path.isdir(results_dir):
-  os.makedirs(results_dir)
+figures_dir = os.path.join(script_dir, solution_file[:-4] + '_figures/')
+movies_dir = os.path.join(script_dir, solution_file[:-4] + '_movies/')
+
+if not os.path.isdir(figures_dir):
+  os.makedirs(figures_dir)
+ 
+if not os.path.isdir(movies_dir):
+  os.makedirs(movies_dir) 
 	
 plt.figure(1,figsize=(h_size, v_size))
 for mode in unique_m:
@@ -333,7 +343,7 @@ plt.ylabel("Frequency [kHz]")
 plt.tight_layout()
 #plt.set_aspect('equal')
 #plt.show(block=True)
-plt.savefig(results_dir+"f_vs_EL.png")
+plt.savefig(figures_dir+"f_vs_EL.png")
 
 
 plt.figure(2,figsize=(h_size, v_size))
@@ -362,8 +372,87 @@ plt.xlabel("E$_0$L$_n$ [V]")
 plt.ylabel("Current [mA]")
 plt.tight_layout()
 #plt.show(block=True)
-plt.savefig(results_dir+"I_vs_EL.png")
-plt.savefig(results_dir+"I_vs_EL.eps")
+plt.savefig(figures_dir+"I_vs_EL.png")
+plt.savefig(figures_dir+"I_vs_EL.eps")
+
+
+
+plt.figure(20,figsize=(h_size, v_size))
+legend_list=[]
+plt.plot(plasma_potential,Ixi0*1000,"k", linewidth = linesize)
+legend_list = legend_list + ["$I_{ix_0}$"]     
+for mode in unique_m:
+  if mode in m_decr and do_decr:
+    plt.plot(plasma_potential[m_decr == mode],dIex_EXB_ave_decr[m_decr == mode]*1000,'--',color=colors[mode], linewidth = linesize)    
+    legend_list = legend_list + ["$I_{ex_{ExB}}$"]     
+    plt.plot(plasma_potential[m_decr == mode],dIex_D_ave_decr[m_decr == mode]*1000,'-.',color=colors[mode], linewidth = linesize)    
+    legend_list = legend_list + ["$I_{ex_{D}}$"] 
+    plt.plot(plasma_potential[m_decr == mode],dIix_ave_decr[m_decr == mode]*1000,':',color=colors[mode], linewidth = linesize)    
+    legend_list = legend_list + ["$I_{ix}$"]         
+    plt.plot(plasma_potential[m_decr == mode],Ix_decr[m_decr == mode]*1000,color=colors[mode], linewidth = linesize)
+    legend_list = legend_list + ["$I_{x_{tot}}$"] 
+  if mode in m_incr and do_incr:
+    plt.plot(plasma_potential[m_decr == mode],dIex_EXB_ave_incr[m_decr == mode]*1000,'--',color=colors[mode], linewidth = linesize)    
+    legend_list = legend_list + ["$I_{ex_{ExB}}$"]     
+    plt.plot(plasma_potential[m_decr == mode],dIex_D_ave_incr[m_decr == mode]*1000,'-.',color=colors[mode], linewidth = linesize)    
+    legend_list = legend_list + ["$I_{ex_{D}}$"]  
+    plt.plot(plasma_potential[m_decr == mode],dIix_ave_incr[m_decr == mode]*1000,':',color=colors[mode], linewidth = linesize)    
+    legend_list = legend_list + ["$I_{ix}$"]   
+    plt.plot(plasma_potential[m_incr == mode],Ix_incr[m_incr == mode]*1000,color = colors[mode], linewidth = linesize)	
+    legend_list = legend_list + ["$I_{x_{tot}}$"]
+
+if isexperiment:
+  if do_decr:
+    for mode in set(mode_number_exp_decr[~np.isnan(mode_number_exp_decr)]):
+      plt.plot(abs(gap_voltage_exp_decr[mode_number_exp_decr == mode])-voltage_shift,gap_current_exp_decr[mode_number_exp_decr == mode],'v',markersize=10,color = colors[mode])	
+      legend_list = legend_list + ["m$_{decr}$ = " + str(int(mode))]
+  if do_incr:
+    for mode in set(mode_number_exp_incr[~np.isnan(mode_number_exp_incr)]):
+      plt.plot(abs(gap_voltage_exp_incr[mode_number_exp_incr == mode])-voltage_shift,gap_current_exp_incr[mode_number_exp_incr == mode],'^',markersize=10,color = colors[mode])	
+      legend_list = legend_list + ["m$_{incr}$ = " + str(int(mode))]
+
+
+plt.legend(legend_list, fancybox = False, edgecolor = 'k' )
+plt.xlabel("E$_0$L$_n$ [V]")
+plt.ylabel("Current [mA]")
+plt.tight_layout()
+#plt.show(block=True)
+plt.savefig(figures_dir+"I_vs_EL.png")
+plt.savefig(figures_dir+"I_vs_EL.eps")
+
+
+# 
+plt.figure(21,figsize=(h_size, v_size))
+legend_list=[]
+for mode in unique_m:
+  if mode in m_decr and do_decr:
+    plt.plot(plasma_potential[m_decr == mode],dphi_phase_decr[m_decr == mode],'--',color=colors[mode], linewidth = linesize)    
+    legend_list = legend_list + ["$\phi$"]     
+    plt.plot(plasma_potential[m_decr == mode],vi1_phase_decr[m_decr == mode],'-.',color=colors[mode], linewidth = linesize)    
+    legend_list = legend_list + ["$v_i$"] 
+    plt.plot(plasma_potential[m_decr == mode],ve1_EXB_phase_decr[m_decr == mode],':',color=colors[mode], linewidth = linesize)    
+    legend_list = legend_list + ["$v_e{_ExB}$"]         
+    plt.plot(plasma_potential[m_decr == mode],ve1_D_phase_decr[m_decr == mode],color=colors[mode], linewidth = linesize)
+    legend_list = legend_list + ["$v_e{_D}$"] 
+  if mode in m_incr and do_incr:
+    plt.plot(plasma_potential[m_decr == mode],dphi_phase_decr[m_decr == mode],'--',color=colors[mode], linewidth = linesize)    
+    legend_list = legend_list + ["$\phi$"]     
+    plt.plot(plasma_potential[m_decr == mode],vi1_phase_decr[m_decr == mode],'-.',color=colors[mode], linewidth = linesize)    
+    legend_list = legend_list + ["$v_i$"] 
+    plt.plot(plasma_potential[m_decr == mode],ve1_EXB_phase_decr[m_decr == mode],':',color=colors[mode], linewidth = linesize)    
+    legend_list = legend_list + ["$v_e{_ExB}$"]         
+    plt.plot(plasma_potential[m_decr == mode],ve1_D_phase_decr[m_decr == mode],color=colors[mode], linewidth = linesize)
+    legend_list = legend_list + ["$v_e{_D}$"] 
+
+plt.legend(legend_list, fancybox = False, edgecolor = 'k' )
+plt.xlabel("E$_0$L$_n$ [V]")
+plt.ylabel("Phase [rad]")
+plt.tight_layout()
+#plt.show(block=True)
+figure_name = "phase_shift"
+plt.savefig(figures_dir+figure_name+".png")
+plt.savefig(figures_dir+figure_name+".eps")
+
 
 plt.figure(3,figsize=(h_size, v_size))
 legend_list=[]
@@ -380,8 +469,8 @@ plt.xlabel("E$_0$L$_n$ [V]")
 plt.ylabel("$d\phi$ [V]")
 plt.tight_layout()
 #plt.show(block=True)
-plt.savefig(results_dir+"ne_over_n0_vs_EL.png")
-plt.savefig(results_dir+"ne_over_n0_vs_EL.eps")
+plt.savefig(figures_dir+"ne_over_n0_vs_EL.png")
+plt.savefig(figures_dir+"ne_over_n0_vs_EL.eps")
 
 plt.figure(4,figsize=(h_size, v_size))
 legend_list=[]
@@ -399,8 +488,8 @@ plt.xlabel("E$_0$L$_n$ [V]")
 plt.ylabel("v$_{i1}$ [m/s]")
 #plt.show(block=True)
 plt.tight_layout()
-plt.savefig(results_dir+"vi1_vs_EL.png")
-plt.savefig(results_dir+"vi1_vs_EL.eps")    
+plt.savefig(figures_dir+"vi1_vs_EL.png")
+plt.savefig(figures_dir+"vi1_vs_EL.eps")    
 	
 	
 plt.figure(5,figsize=(h_size*1.05, v_size))
@@ -429,8 +518,8 @@ plt.ylabel("$\omega_R$ [rad/s]")
 
 plt.tight_layout()
 #plt.show(block=True)
-plt.savefig(results_dir+"wR_vs_EL_decr_comparison.png", additional_artists = art, bbox_inches="tight")
-plt.savefig(results_dir+"wR_vs_EL_decr_comparison.eps", additional_artists = art, bbox_inches="tight")
+plt.savefig(figures_dir+"wR_vs_EL_decr_comparison.png", additional_artists = art, bbox_inches="tight")
+plt.savefig(figures_dir+"wR_vs_EL_decr_comparison.eps", additional_artists = art, bbox_inches="tight")
 
 
 plt.figure(6,figsize=(h_size, v_size))
@@ -453,8 +542,213 @@ plt.xlabel("E$_0$L$_n$ [V]")
 plt.ylabel("$\omega_R$ [rad/s]")
 plt.tight_layout()
 #plt.show(block=True)
-plt.savefig(results_dir+"wR_vs_EL_incr_comparison.png", additional_artists = art, bbox_inches="tight")
-plt.savefig(results_dir+"wR_vs_EL_incr_comparison.eps", additional_artists = art, bbox_inches="tight")
+plt.savefig(figures_dir+"wR_vs_EL_incr_comparison.png", additional_artists = art, bbox_inches="tight")
+plt.savefig(figures_dir+"wR_vs_EL_incr_comparison.eps", additional_artists = art, bbox_inches="tight")
+
+
+
+
+# MOVIES
+
+def find_nearest_index(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx
+
+
+
+# 0.568743859261
+e = 1.60217657e-19
+
+Lz = 0.001
+
+def animate_currents(ind):
+  # ind = find_nearest_index(ion_velocity0,-500)
+  m_decr_ = m_decr[ind]
+  ky_ = m_decr_/R0
+  f_  = frequency_decr[ind]
+  lambda_ = 2*np.pi/ky_
+  y_ = np.linspace(0,m_decr_*lambda_,1000)
+  ne0_ = ne0[ind]*(1.0+np.sin(ky_*y_))
+  De_ = electron_diffusion[ind]
+
+  dphi_phase_ = dphi_phase_decr[ind]
+  vi1_phase_ = vi1_phase_decr[ind]
+  ve1_EXB_phase_ = ve1_EXB_phase_decr[ind] 
+  ve1_D_phase_ = ve1_D_phase_decr[ind]
+
+  dphi_ = plasma_potential[ind] + dphi_decr[ind] * np.sin(ky_*y_ + dphi_phase_)
+  vi0_ = ion_velocity0[ind]
+  vi1_ = vi1_decr[ind]*np.sin(ky_*y_ + vi1_phase_)
+  ve1_EXB_ = ve1_EXB_decr[ind]*np.sin(ky_*y_ + ve1_EXB_phase_)
+  ve1_D_ = ve1_D_decr[ind]*np.sin(ky_*y_ + ve1_D_phase_)
+  
+  ve_De_ = De_/Lz  + kz*De_*np.sin(ky_*y_ + np.pi/2)
+  
+
+  Je_De_ = -e*ne0_*ve_De_
+  Ji0_ = e*ne0_*vi0_
+  Ji1_ =  e*ne0_*vi1_
+  JeExB_ = -e*ne0_*ve1_EXB_
+  JeD_ = -e*ne0_*ve1_D_
+  Jtot_ = Ji0_ + Ji1_ + JeExB_ + JeD_ + Je_De_
+
+  # plt.figure(40,figsize=(h_size, v_size))
+  # plt.plot(y_,ne0_)
+
+  # plt.figure(41,figsize=(h_size, v_size))
+  # plt.plot(y_,dphi_)
+  
+  #plt.figure(42,figsize=(h_size, v_size))
+  #plt.plot(y_,vi1_)
+  #plt.plot(y_,ve1_EXB_)
+  #plt.plot(y_,ve1_D_)
+
+  #plt.clear()
+  plt.clf()
+  legend_list=[]
+  #plt.figure(43,figsize=(h_size, v_size))
+  plt.plot(y_,Je_De_)
+  legend_list = legend_list + ["Ie_De"] 
+  plt.plot(y_,Ji0_)
+  legend_list = legend_list + ["Ii0"] 
+  plt.plot(y_, Ji1_)
+  legend_list = legend_list + ["Ii1"]
+  plt.plot(y_, JeExB_)
+  legend_list = legend_list + ["IeExB"]
+  plt.plot(y_, JeD_)
+  legend_list = legend_list + ["IeD"]
+  plt.plot(y_,Jtot_,'k',linewidth = linesize_large)
+  legend_list = legend_list + ["Itot"]
+  #plt.ylim((-3e-2, 3e-2))
+  temp = integrate.cumtrapz(Jtot_, y_, initial = 0 )
+  mean_current = temp[-1]
+  plt.title( "{:.3f}".format(np.mean(Jtot_)*A_plasma*1000) + " mA" )
+  #plt.title( "{:.3f}".format(mean_current*1000) + " mA" )
+  plt.legend(legend_list, fancybox = False, edgecolor = 'k' ,loc  = 'right')
+
+
+N_segments = len(m_decr)
+segment_segments_ = 8
+def animate_segments(ind):
+  # ind = find_nearest_index(ion_velocity0,-500)
+  m_decr_ = m_decr[ind]
+  ky_ = m_decr_/R0
+  f_  = frequency_decr[ind]
+  T_ = 1/f_
+  dt_ = m_decr_*T_/(N_segments-1)
+  
+  lambda_ = 2*np.pi/ky_
+  segment_y = 2*np.pi*R0/segment_segments_
+  
+  y_ = np.linspace(0,segment_y,N_segments)
+  y_2 = np.linspace(segment_y,2*segment_y,N_segments)
+  dy_ = 2*np.pi*R0/(N_segments-1)
+  
+  De_ = electron_diffusion[ind]
+
+  dphi_phase_ = dphi_phase_decr[ind]
+  vi1_phase_ = vi1_phase_decr[ind]
+  ve1_EXB_phase_ = ve1_EXB_phase_decr[ind] 
+  ve1_D_phase_ = ve1_D_phase_decr[ind]
+  
+  t = np.linspace(0,T_ ,N_segments)
+  Itot_v = np.zeros(N_segments)
+  Itot_v2 = np.zeros(N_segments)
+  
+  # compute integral from 0 to pi/4
+  i = 0
+  t_ = 0
+
+  
+  while t_ <=  m_decr_*T_ + dt_/2:
+    
+    
+    ne0_ = ne0[ind]*(1.0+np.sin(ky_*y_ - 2*np.pi*f_*t_))
+    dphi_ = plasma_potential[ind] + dphi_decr[ind] * np.sin(ky_*y_ + dphi_phase_ - 2*np.pi*f_*t_)
+    vi0_ = ion_velocity0[ind]
+    vi1_ = vi1_decr[ind]*np.sin(ky_*y_ + vi1_phase_ - 2*np.pi*f_*t_)
+    ve1_EXB_ = ve1_EXB_decr[ind]*np.sin(ky_*y_ + ve1_EXB_phase_ - 2*np.pi*f_*t_)
+    ve1_D_ = ve1_D_decr[ind]*np.sin(ky_*y_ + ve1_D_phase_ - 2*np.pi*f_*t_)
+    ve_De_ = De_/Lz  + kz*De_*np.sin(ky_*y_ + np.pi/2 - 2*np.pi*f_*t_)
+
+    Je_De_ = -e*ne0_*ve_De_
+    Ji0_ = e*ne0_*vi0_
+    Ji1_ =  e*ne0_*vi1_
+    JeExB_ = -e*ne0_*ve1_EXB_
+    JeD_ = -e*ne0_*ve1_D_
+    Jtot_1 = Ji0_ + Ji1_ + JeExB_ + JeD_ + Je_De_
+
+    ne0_ = ne0[ind]*(1.0+np.sin(ky_*y_2 - 2*np.pi*f_*t_))
+    dphi_ = plasma_potential[ind] + dphi_decr[ind] * np.sin(ky_*y_2 + dphi_phase_ - 2*np.pi*f_*t_)
+    vi1_ = vi1_decr[ind]*np.sin(ky_*y_2 + vi1_phase_ - 2*np.pi*f_*t_)
+    ve1_EXB_ = ve1_EXB_decr[ind]*np.sin(ky_*y_2 + ve1_EXB_phase_ - 2*np.pi*f_*t_)
+    ve1_D_ = ve1_D_decr[ind]*np.sin(ky_*y_2 + ve1_D_phase_ - 2*np.pi*f_*t_)
+    ve_De_ = De_/Lz  + kz*De_*np.sin(ky_*y_2 + np.pi/2 - 2*np.pi*f_*t_)
+
+    Je_De_ = -e*ne0_*ve_De_
+    Ji0_ = e*ne0_*vi0_
+    Ji1_ =  e*ne0_*vi1_
+    JeExB_ = -e*ne0_*ve1_EXB_
+    JeD_ = -e*ne0_*ve1_D_
+    Jtot_2 = Ji0_ + Ji1_ + JeExB_ + JeD_ + Je_De_
+
+    #input("Enter any key")
+
+    temp = integrate.cumtrapz(Jtot_1, y_, initial = 0 )
+    Itot_v[i] = temp[-1]- temp[0]
+
+    temp = integrate.cumtrapz(Jtot_2, y_2, initial = 0 )
+    Itot_v2[i] = temp[-1]- temp[0]
+
+    
+    #print(temp[-1])
+    i += 1
+    t_ += dt_
+  
+
+  # plt.figure(40,figsize=(h_size, v_size))
+  # plt.plot(y_,ne0_)
+
+  # plt.figure(41,figsize=(h_size, v_size))
+  # plt.plot(y_,dphi_)
+  
+  #plt.figure(44,figsize=(h_size, v_size))
+  #plt.plot(y_,vi1_)
+  #plt.plot(y_,ve1_EXB_)
+  #plt.plot(y_,ve1_D_)
+
+  plt.clf()
+  legend_list=[]
+  plt.plot(t, Itot_v,'b',linewidth = linesize_large)
+  legend_list = legend_list + ["seg 1"]
+  plt.plot(t, Itot_v2,'r',linewidth = linesize_large)
+  legend_list = legend_list + ["seg 2"]
+  plt.title( "{:.3f}".format(np.mean(Itot_v)*8) + " mA" )
+  #plt.ylim((-4e-2, 4e-2))
+  
+  plt.legend(legend_list, fancybox = False, edgecolor = 'k' ,loc  = 'right')
+
+fig = plt.figure(43,figsize=(h_size, v_size))
+ani = animation.FuncAnimation(fig, animate_currents, frames = range(0,len(m_decr)),interval = 80, repeat_delay=20)
+print(movies_dir + "movie_current.mp4")
+ani.save(movies_dir + "movie_current.mp4")
+fig = plt.figure(44,figsize=(h_size, v_size))
+ani = animation.FuncAnimation(fig, animate_segments, frames = range(0,len(m_decr)),interval = 80, repeat_delay=20)
+ani.save(movies_dir + "movie_segments.mp4")
+
+
+
+ind = find_nearest_index(ion_velocity0,-900)
+fig = plt.figure(20,figsize=(h_size, v_size))
+animate_currents(ind)
+plt.savefig(figures_dir+"currents_y.png", additional_artists = art, bbox_inches="tight")
+plt.savefig(figures_dir+"currents_y.eps", additional_artists = art, bbox_inches="tight")
+
+fig = plt.figure(21,figsize=(h_size, v_size))
+animate_segments(ind)
+plt.savefig(figures_dir+"segments_y.png", additional_artists = art, bbox_inches="tight")
+plt.savefig(figures_dir+"segments_y.eps", additional_artists = art, bbox_inches="tight")
 
 
 #                 W                       #
@@ -512,8 +806,8 @@ with open("w_solution.txt") as s:
   plt.ylabel("$\omega{_R}$ [rad/s]")
   plt.tight_layout()
   
-  plt.savefig(results_dir+"wR_vs_ky.png")
-  plt.savefig(results_dir+"wR_vs_ky.eps")
+  plt.savefig(figures_dir+"wR_vs_ky.png")
+  plt.savefig(figures_dir+"wR_vs_ky.eps")
   
   plt.figure(8,figsize=(h_size, v_size))
   
@@ -525,8 +819,8 @@ with open("w_solution.txt") as s:
   plt.legend(["$\omega{_I}^2$", "$α$", "$β$","$γ$"], loc = 'upper right' , fancybox = False, edgecolor = 'k' )
   plt.xlabel("m = k$_y$R$_0$")
   plt.ylabel("[rad/s]$^2$")
-  plt.savefig(results_dir+"wI_vs_ky.png")
-  plt.savefig(results_dir+"wI_vs_ky.eps")
+  plt.savefig(figures_dir+"wI_vs_ky.png")
+  plt.savefig(figures_dir+"wI_vs_ky.eps")
   
   plt.figure(9,figsize=(h_size, v_size))
   plt.plot(ky*R0,[alpha[i]+beta[i]+gamma[i] for i in range(len(alpha))],'r', linewidth = linesize_large)
@@ -536,8 +830,8 @@ with open("w_solution.txt") as s:
   plt.ylabel("[rad/s]$^2$")
   plt.tight_layout()
   
-  plt.savefig(results_dir+"sqrt_vs_ky.png")
-  plt.savefig(results_dir+"sqrt_vs_ky.eps")
+  plt.savefig(figures_dir+"sqrt_vs_ky.png")
+  plt.savefig(figures_dir+"sqrt_vs_ky.eps")
   
   plt.figure(10,figsize=(h_size, v_size))
   #plt.plot(ky,[alpha[i]-beta[i]-gamma[i] for i in range(len(alpha))],'b', linewidth = linesize_large)
@@ -551,8 +845,8 @@ with open("w_solution.txt") as s:
   plt.ylabel("[rad/s]$^2$")
   plt.tight_layout()
   
-  plt.savefig(results_dir+"sqrt_vs_ky.png")
-  plt.savefig(results_dir+"sqrt_vs_ky.eps")
+  plt.savefig(figures_dir+"sqrt_vs_ky.png")
+  plt.savefig(figures_dir+"sqrt_vs_ky.eps")
   
-  plt.show()
+  #plt.show()
 
