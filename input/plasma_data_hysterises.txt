@@ -5,7 +5,7 @@ E0                      -1.05e4
 R0                      2.5e-3
 LB                      .5e-3
 Ln                      2e-3
-n0                      1.2e18
+n0                      1.0e18
 plasma_thickness        1.0e-3
 dne_over_n0             1.0			
 electron_diffusion      .135
