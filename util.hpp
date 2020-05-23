@@ -1,3 +1,5 @@
+#pragma once
+
 #include <fstream>
 #include <iostream>
 #include <cmath>
@@ -89,7 +91,9 @@ void ReadDatafromFile(std::ifstream& f, double& mi,     double& Te,
                                         double& t,      std::pair<double,double>& voltage_scale, 
                                         double& voltage_increment, double& my_increment, 
                                         unsigned int& N_voltages, unsigned int& N_modes,
-                                        double& dne_over_n0){
+                                        double& dne_over_n0,
+                                        int& Ni, int& Nj,
+                                        double& tf, double& n10_n0){
   double ua_to_kg = 1.66053892e-27;                                      
   if (f.is_open()){
     std::string name;
@@ -112,8 +116,11 @@ void ReadDatafromFile(std::ifstream& f, double& mi,     double& Te,
       else if (name == "my_max") f >> my_max;
       else if (name == "my_min") f >> my_min;
       else if (name == "dne_over_n0") f >> dne_over_n0;
-      else if (name == "voltage_scale") {f >> voltage_scale.first >> voltage_scale.second;
-      }      
+      else if (name == "voltage_scale") {f >> voltage_scale.first >> voltage_scale.second;}
+      else if (name == "Ni") f >> Ni;
+      else if (name == "Nj") f >> Nj;
+      else if (name == "tf") f >> tf;
+      else if (name == "n10_n0") f >> n10_n0;
     }
     voltage_increment=(voltage_scale.second-voltage_scale.first)/(N_voltages-1);
     my_increment = (my_max - my_min) / (N_modes - 1);
