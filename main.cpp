@@ -3,6 +3,8 @@
 #include <cmath>
 #include "util.hpp"
 #include "linearmodel.hpp"
+#include "nonlinearmodel.hpp"
+
 
 int main(int argc, char *argv[]){
   // Argument check:
@@ -19,12 +21,18 @@ int main(int argc, char *argv[]){
   double voltage_increment, my_increment;
   unsigned int N_voltages, N_modes;
   
+  // Additional arguments for nonlinear analysis
+  int Ni, Nj;
+  double tf, n10_n0;
+  
   plasma_data_file = argv[1];
   std::ifstream f(plasma_data_file);
 
+
   ReadDatafromFile(f, mi, Te, B0, n0, E0, R0, LB, Ln, De0, vix, kz, kx, 
                     my_max, my_min, t, voltage_scale, voltage_increment, 
-                    my_increment, N_voltages, N_modes, ne_over_n0);
+                    my_increment, N_voltages, N_modes, ne_over_n0, 
+                    Ni, Nj, tf, n10_n0);
   
   std::ofstream s("solution.txt");  
   PrintInputHeader(s);
@@ -34,6 +42,11 @@ int main(int argc, char *argv[]){
   s.precision(4);  
   LinearModel discharge(mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t);
   
+  NonlinearModel NLdischarge(mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t,
+                             Ni, Nj, tf, n10_n0);
+  
+  NLdischarge.solver_stability_analysis();
+  //NLdischarge.solve();
   for(unsigned int i = 0; i < N_voltages; i++){
     E = E0*(voltage_scale.first+voltage_increment*i);
     discharge.set_E(E);
