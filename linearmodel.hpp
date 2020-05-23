@@ -1,10 +1,9 @@
+#pragma once
+
 #include <fstream>
 #include <complex>
 #include <iomanip>
 
-std::complex<double>i1(0.0,1.0); // imaginary number defined as 
-                                 // global variable ensures compatibility
-                                 // with older versions of C++
 
 class LinearModel{
   public:
@@ -351,7 +350,7 @@ class LinearModel{
     De = De0*scale_factor;
     ne0=n0*scale_factor;
     A_plasma = 2*M_PI*R0*t;
-    //ne0=n0;
+    ne0=n0;
     cs = sqrt(T*e/mi);
     nupara = kz*kz*De;
     vd = -T/B0/Ln;
@@ -362,10 +361,16 @@ class LinearModel{
     update_wI_maxgrowth();
     update_coherent_modes();
   }
-  double& mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t;
+  
+  protected:
+  
+  double mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t;
   double e{1.60217657e-19};
   double scale_factor, E, T, ne0, De, cs, nupara, vd, vD, v0, vi0, wi0,
          my_maxgrowth, wI_maxgrowth, A_plasma;
   double my_decr, ky_decr, my_incr, ky_incr;
   std::complex<double> w_incr, w_decr;
+  
+  std::complex<double> i1{0.0,1.0};
+  
 };
