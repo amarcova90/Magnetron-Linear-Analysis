@@ -45,7 +45,7 @@ int main(int argc, char *argv[]){
   NonlinearModel NLdischarge(mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t,
                              Ni, Nj, tf, n10_n0);
   
-  NLdischarge.solver_stability_analysis();
+  NLdischarge.solver_validation_t0();
   //NLdischarge.solve();
   for(unsigned int i = 0; i < N_voltages; i++){
     E = E0*(voltage_scale.first+voltage_increment*i);
