@@ -12,11 +12,10 @@ electron_diffusion        .135
 vix                       -890	
 lambda_z                  2.5e-3
 lambda_x                  0.9e-3
-N_voltages                1000
+N_voltages                10000
 voltage_scale             0.4 1.4
-Ni                        10001
-Nj                        1001
+Ni                        1
+Nj                        10000
 tf                        100e-6
-n10_n0                    1e-5   
-m_n10                     3
+n10_n0                    1e-3
 
