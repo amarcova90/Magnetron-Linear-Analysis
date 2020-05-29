@@ -24,7 +24,9 @@ class NonlinearModel: public LinearModel {
                
   void solve();
   
-  void solver_validation_t0();
+  void solver_validation();
+  
+  void resize(int Ni_new,int Nj_new);
   
   private:
 
