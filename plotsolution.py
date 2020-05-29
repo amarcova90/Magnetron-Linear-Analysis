@@ -25,7 +25,8 @@ linesize_large = 4.0
 # subset of modes
 unique_m = (3, 4)
 do_decr = True
-do_incr = False
+do_incr = True
+do_movies = False
 
 import numpy as np
 import os
@@ -34,7 +35,7 @@ import sys
 # print(len(sys.argv))
 
 if len(sys.argv)==1:
-  solution_file = "solution.txt"
+  solution_file = "linear_model_solutions/solution.txt"
   isexperiment = 0
 elif len(sys.argv)==2:
   solution_file=sys.argv[1]
@@ -306,8 +307,8 @@ legend_list=[]
 colors = {np.nan: 'k', 2: (0.6350, 0.0780, 0.1840),3: (0, 0.4470, 0.7410),4: (0.8500, 0.3250, 0.0980), 5: (0.9290, 0.6940, 0.1250), 6: (0.4940, 0.1840, 0.5560), 1: (0.4660, 0.6740, 0.1880), 7 : (0.3010, 0.7450, 0.9330), 8 : (1 , 0, 0)}
 
 script_dir = os.path.dirname(__file__)
-figures_dir = os.path.join(script_dir, solution_file[:-4] + '_figures/')
-movies_dir = os.path.join(script_dir, solution_file[:-4] + '_movies/')
+figures_dir = 'solution_figures/'
+movies_dir = 'solution_movies/'
 
 if not os.path.isdir(figures_dir):
   os.makedirs(figures_dir)
@@ -729,13 +730,14 @@ def animate_segments(ind):
   
   plt.legend(legend_list, fancybox = False, edgecolor = 'k' ,loc  = 'right')
 
-fig = plt.figure(43,figsize=(h_size, v_size))
-ani = animation.FuncAnimation(fig, animate_currents, frames = range(0,len(m_decr)),interval = 80, repeat_delay=20)
-print(movies_dir + "movie_current.mp4")
-ani.save(movies_dir + "movie_current.mp4")
-fig = plt.figure(44,figsize=(h_size, v_size))
-ani = animation.FuncAnimation(fig, animate_segments, frames = range(0,len(m_decr)),interval = 80, repeat_delay=20)
-ani.save(movies_dir + "movie_segments.mp4")
+if do_movies:
+  fig = plt.figure(43,figsize=(h_size, v_size))
+  ani = animation.FuncAnimation(fig, animate_currents, frames = range(0,len(m_decr)),interval = 80, repeat_delay=20)
+  print(movies_dir + "movie_current.mp4")
+  ani.save(movies_dir + "movie_current.mp4")
+  fig = plt.figure(44,figsize=(h_size, v_size))
+  ani = animation.FuncAnimation(fig, animate_segments, frames = range(0,len(m_decr)),interval = 80, repeat_delay=20)
+  ani.save(movies_dir + "movie_segments.mp4")
 
 
 
@@ -754,7 +756,7 @@ plt.savefig(figures_dir+"segments_y.eps", additional_artists = art, bbox_inches=
 #                 W                       #
 
 
-with open("w_solution.txt") as s:
+with open("linear_model_solutions/w_solution.txt") as s:
   lines = s.read().splitlines()
   inputs = ("ion_mass_u", "Te", "B0", "R0", "LB", "Ln", "kz", "kx", "N_voltages")
   
@@ -848,5 +850,5 @@ with open("w_solution.txt") as s:
   plt.savefig(figures_dir+"sqrt_vs_ky.png")
   plt.savefig(figures_dir+"sqrt_vs_ky.eps")
   
-  #plt.show()
+plt.show()
 
