@@ -16,4 +16,5 @@ $(TARGET): $(OBJS)
 clean:
 	$(RM) $(OBJS) $(TARGET) *~ *.o solution.txt \
   w_solution.txt solution_figures/*.eps solution_figures/*.png \
-  solution_movies/*mp4
+  solution_movies/*mp4 validation_files/*.txt \
+  linear_model_solutions/*.txt
