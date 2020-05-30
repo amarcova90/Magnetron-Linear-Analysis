@@ -81,7 +81,7 @@ void PrintOutputHeader(std::ofstream& s){
 
 }
 
-void ReadDatafromFile(std::ifstream& f, double& mi,     double& Te,
+void ReadLinearDatafromFile(std::ifstream& f, double& mi,     double& Te,
                                         double& B0,     double& n0,     
                                         double& E0,     double& R0,  
                                         double& LB,     double& Ln,
@@ -91,9 +91,7 @@ void ReadDatafromFile(std::ifstream& f, double& mi,     double& Te,
                                         double& t,      std::pair<double,double>& voltage_scale, 
                                         double& voltage_increment, double& my_increment, 
                                         unsigned int& N_voltages, unsigned int& N_modes,
-                                        double& dne_over_n0,
-                                        int& Ni, int& Nj,
-                                        double& tf, double& n10_n0){
+                                        double& dne_over_n0){
   double ua_to_kg = 1.66053892e-27;                                      
   if (f.is_open()){
     std::string name;
@@ -117,13 +115,39 @@ void ReadDatafromFile(std::ifstream& f, double& mi,     double& Te,
       else if (name == "my_min") f >> my_min;
       else if (name == "dne_over_n0") f >> dne_over_n0;
       else if (name == "voltage_scale") {f >> voltage_scale.first >> voltage_scale.second;}
-      else if (name == "Ni") f >> Ni;
+    }
+    voltage_increment=(voltage_scale.second-voltage_scale.first)/(N_voltages-1);
+    my_increment = (my_max - my_min) / (N_modes - 1);
+    f.close();
+  }
+  
+}
+
+void ReadNonlinearDatafromFile(std::ifstream& f, double& mi,     double& Te,
+                                        double& B0,     double& n0,     
+                                        double& E0,     double& R0,  
+                                        double& LB,     double& Ln,
+                                        double& De0,    double& vix,    
+                                        double& kz,     double& kx, 
+                                        double& my_max, double& my_min,
+                                        double& t,      std::pair<double,double>& voltage_scale, 
+                                        double& voltage_increment, double& my_increment, 
+                                        unsigned int& N_voltages, unsigned int& N_modes,
+                                        double& dne_over_n0,
+                                        int& Ni, int& Nj,
+                                        double& tf, double& n10_n0)
+                                        {
+  ReadLinearDatafromFile(f, mi, Te, B0, n0, E0, R0, LB, Ln, De0, vix, kz, kx, 
+                                                                my_max, my_min, t, voltage_scale, voltage_increment, 
+                                                                my_increment, N_voltages, N_modes, dne_over_n0);                                                                           
+  if (f.is_open()){
+    std::string name;
+    while (f >> name){
+      if (name == "Ni") f >> Ni;
       else if (name == "Nj") f >> Nj;
       else if (name == "tf") f >> tf;
       else if (name == "n10_n0") f >> n10_n0;
     }
-    voltage_increment=(voltage_scale.second-voltage_scale.first)/(N_voltages-1);
-    my_increment = (my_max - my_min) / (N_modes - 1);
     f.close();
   }
   
