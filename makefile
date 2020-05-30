@@ -1,20 +1,32 @@
 CXX := g++
 CXXFLAGS  := -std=c++11 -O3 -W -Wall -Wextra #-Wfatal-errors
 
-TARGET := main
-OBJS := main.o nonlinearmodel.o
-INCS := util.hpp linearmodel.hpp nonlinearmodel.hpp 
-INCLUDES += -I /mnt/c/Users/Andrea/Google\ Drive/Stanford/Research/Magnetron/Magnetron-Linear-Analysis/MTL-4.0.9555-Linux/usr/include
+OBJS_LIN := main_linear.o
+OBJS_VAL := main_NLvalidation.o nonlinearmodel.o
+INCS_LIN := util.hpp linearmodel.hpp
+INCS_VAL := util.hpp linearmodel.hpp nonlinearmodel.hpp 
+INCLUDES = -I /mnt/c/Users/Andrea/Google\ Drive/Stanford/Research/Magnetron/Magnetron-Linear-Analysis/MTL-4.0.9555-Linux/usr/include
+TARGET_LIN := run_linear
+TARGET_VAL := run_NLvalidation
 
-$(TARGET): $(OBJS)
-	$(CXX) $(OBJS) -o $(TARGET)
+.PHONY: all linear validation
 
-%.o: %.cpp $(INCS)
+all : linear validation
+linear : $(TARGET_LIN)
+validation : $(TARGET_VAL)
+
+$(TARGET_LIN): $(OBJS_LIN)
+	$(CXX) $(OBJS_LIN) -o $(TARGET_LIN)
+
+$(TARGET_VAL): $(OBJS_VAL)
+	$(CXX) $(OBJS_VAL) $(INCLUDES) -o $(TARGET_VAL)
+
+%.o: %.cpp $(INCS_LIN) $(INCS_VAL)
 	$(CXX)  $(CXXFLAGS) $(INCLUDES) -o $@ -c $<
 
 .PHONY: clean
 clean:
-	$(RM) $(OBJS) $(TARGET) *~ *.o solution.txt \
+	$(RM) $(OBJS_LIN) $(TARGET_LIN) $(TARGET_VAL) *~ *.o solution.txt \
   w_solution.txt solution_figures/*.eps solution_figures/*.png \
   solution_movies/*mp4 validation_files/*.txt \
   linear_model_solutions/*.txt
