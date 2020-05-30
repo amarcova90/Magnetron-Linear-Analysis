@@ -3,7 +3,6 @@
 #include <cmath>
 #include "util.hpp"
 #include "linearmodel.hpp"
-#include "nonlinearmodel.hpp"
 
 
 int main(int argc, char *argv[]){
@@ -21,18 +20,12 @@ int main(int argc, char *argv[]){
   double voltage_increment, my_increment;
   unsigned int N_voltages, N_modes;
   
-  // Additional arguments for nonlinear analysis
-  int Ni, Nj;
-  double tf, n10_n0;
-  
   plasma_data_file = argv[1];
   std::ifstream f(plasma_data_file);
 
-
-  ReadDatafromFile(f, mi, Te, B0, n0, E0, R0, LB, Ln, De0, vix, kz, kx, 
+  ReadLinearDatafromFile(f, mi, Te, B0, n0, E0, R0, LB, Ln, De0, vix, kz, kx, 
                     my_max, my_min, t, voltage_scale, voltage_increment, 
-                    my_increment, N_voltages, N_modes, ne_over_n0, 
-                    Ni, Nj, tf, n10_n0);
+                    my_increment, N_voltages, N_modes, ne_over_n0);
   
   std::ofstream s("linear_model_solutions/solution.txt");  
   PrintInputHeader(s);
@@ -41,12 +34,7 @@ int main(int argc, char *argv[]){
   s.setf(std::ios::scientific, std::ios::floatfield);
   s.precision(4);  
   LinearModel discharge(mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t);
-  
-  NonlinearModel NLdischarge(mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t,
-                             Ni, Nj, tf, n10_n0);
-  
-  
-  //NLdischarge.solve();
+
   for(unsigned int i = 0; i < N_voltages; i++){
     E = E0*(voltage_scale.first+voltage_increment*i);
     discharge.set_E(E);
@@ -77,15 +65,6 @@ int main(int argc, char *argv[]){
 
     }
     g.close();
-  }
-  
-  // nonlinear m odel validation;
-  int Nj_val = 2000000;
-  NonlinearModel NLdischarge_val(mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t,
-                             Ni, Nj_val, tf, n10_n0);
-  for (int N_val = 1000; N_val < Nj_val; N_val*=2){
-    NLdischarge_val.resize(1,N_val);
-    NLdischarge_val.solver_validation();
   }
 
   return 0;
