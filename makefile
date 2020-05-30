@@ -1,11 +1,13 @@
 CXX := g++
 CXXFLAGS  := -std=c++11 -O3 -W -Wall -Wextra #-Wfatal-errors
 
+current_dir := $(shell pwd)
+
 OBJS_LIN := main_linear.o
 OBJS_VAL := main_NLvalidation.o nonlinearmodel.o
 INCS_LIN := util.hpp linearmodel.hpp
 INCS_VAL := util.hpp linearmodel.hpp nonlinearmodel.hpp 
-INCLUDES = -I /mnt/c/Users/Andrea/Google\ Drive/Stanford/Research/Magnetron/Magnetron-Linear-Analysis/MTL-4.0.9555-Linux/usr/include
+INCLUDES = -I $(current_dir)/MTL-4.0.9555-Linux/usr/include
 TARGET_LIN := run_linear
 TARGET_VAL := run_NLvalidation
 
