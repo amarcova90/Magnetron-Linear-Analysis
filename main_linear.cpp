@@ -9,7 +9,7 @@ int main(int argc, char *argv[]){
   // Argument check:
   if(argc!=2){
     std::cout << "Wrong number of inputs. Usage";
-    std::cout << "$ ./main plasma_data_file" << std::endl;
+    std::cout << "$ ./run_linear plasma_data_file" << std::endl;
     return 0;
   }
   // Variable definition:
@@ -28,9 +28,9 @@ int main(int argc, char *argv[]){
                     my_increment, N_voltages, N_modes, ne_over_n0);
   
   std::ofstream s("linear_model_solutions/solution.txt");  
-  PrintInputHeader(s);
-  PrintInputData(s,mi,Te,B0,n0,R0,t,LB,Ln,kz,kx,t,ne_over_n0,N_voltages,N_modes);
-  PrintOutputHeader(s);
+  PrintLinearInputHeader(s);
+  PrintLinearInputData(s,mi,Te,B0,n0,R0,t,LB,Ln,kz,kx,t,ne_over_n0,N_voltages,N_modes);
+  PrintLinearOutputHeader(s);
   s.setf(std::ios::scientific, std::ios::floatfield);
   s.precision(4);  
   LinearModel discharge(mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t);
