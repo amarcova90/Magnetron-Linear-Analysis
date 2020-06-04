@@ -36,8 +36,9 @@ NonlinearModel::NonlinearModel(double& mi_,  double& Te_, double& B0_, double& E
               } 
 void NonlinearModel::BuildInitialConditions(){
     double y;
+    //double dy_ = (2*M_PI*R0 - dy)/ Nj;
     for( int j = 0; j < Nj+1; j++){
-      y = dy*(1.0-1.0/Nj)*j;
+      y = dy*j;
       n1[0][j]   = n10                 * ( cos(my_decr/R0*y) +i1*sin(my_decr/R0*y) );
       vx1[0][j]  = dvxi1_decr(n10/n0)  * ( cos(my_decr/R0*y) +i1*sin(my_decr/R0*y) );
       vy1[0][j]  = dvyi1_decr(n10/n0)  * ( cos(my_decr/R0*y) +i1*sin(my_decr/R0*y) );
@@ -77,7 +78,7 @@ void NonlinearModel::BuildInitialConditions(){
     pc::identity<A_phi>        P(A);  
     //basic_iteration<double> iter{r0, 1000, 1.e-5};  
     r0 = dense_vector<complex_number>(spacesteps_number(),1.0);    
-    noisy_iteration<double> iter{r0, 1000, 1.e-5};
+    noisy_iteration<double> iter{r0, 1000, err_rel, err_abs};
     bicgstab(A, phi1[i], b, P, iter);
              
   }
@@ -94,17 +95,15 @@ void NonlinearModel::BuildInitialConditions(){
     sigma_phi.resize(Nj+1);
     r_phi.resize(Nj+1);
     t = 0; // simulation time initialized to 0
-    dy = 2*M_PI*R0/Nj;
+    dy = 2*M_PI*R0/(Nj+1.0);
     dt = tf/Ni;
-    b.change_dim(spacesteps_number());// = dense_vector<complex_number>(spacesteps_number(), 0.0);
+    b.change_dim(spacesteps_number());
     r0.change_dim(spacesteps_number());
     BuildInitialConditions();
   }
   
   void NonlinearModel::solver_validation(){
     // linearize potential equation
-    
-    std::cout << Ni << " " << Nj << std::endl;
     
     solution_container space(1,dense_vector<complex_number>(Nj+1));
     solution_container exact_linear(1,dense_vector<complex_number>(Nj+1));
@@ -118,13 +117,15 @@ void NonlinearModel::BuildInitialConditions(){
     
     // compute exact solution from linear analysis
     double y;
+    //double dy_;
     complex_number phi1_amp;
     phi1_amp = - R0*n0/Z0/my_decr * ( ( Q0*my_decr/R0 + vi0*kx + i1*De0*kz*kz) * n10/n0 + \
                                        kx*dvxi1_decr(n10/n0) + my_decr*dvyi1_decr(n10/n0)/R0 - \
                                        i1*dvxi1_decr(n10/n0)/Ln );
     
+    
     for( int j = 0; j < Nj+1; j++){
-      y = dy*(1.0-1.0/Nj)*j;
+      y = dy*j;
       space[0][j] = dy*j;
       exact_linear[0][j] = phi1_amp  * ( cos(my_decr/R0*y) +i1*sin(my_decr/R0*y) );
     }
@@ -136,16 +137,28 @@ void NonlinearModel::BuildInitialConditions(){
     build_b(i);                       
     pc::identity<A_phi>        P(A);   
     
-    r0 = dense_vector<complex_number>(spacesteps_number(),1.0);
-    noisy_iteration<double> iter_lin{r0, 1000, 1.e-7};
+    //r0 = dense_vector<complex_number>(spacesteps_number(),1.0);
+    
+    dense_vector<complex_number> x0 = exact_linear[0];
+    
+    r0 = b - A*x0;
+    
+    noisy_iteration<double> iter_lin{r0, 10000, err_rel, err_abs};
+    
     bicgstab(A, solution_linear[0], b, P, iter_lin);
+    //bicg(A, solution_linear[0], b, P, iter_lin);
     
     // compute nonlinear solution using solver
-    fact_phi = 1.0; // turning on nonlinear terms
-    r0 = dense_vector<complex_number>(spacesteps_number(),1.0);
-    noisy_iteration<double> iter_nonlin{r0, 1000, 1.e-7};
+    fact_phi = 1.0; // turning on nonlinear terms    
+    
+    //r0 = dense_vector<complex_number>(spacesteps_number(),1.0);
+    r0 = b - A*x0;
+
+    
+    noisy_iteration<double> iter_nonlin{r0, 10000, err_rel, err_abs};
     build_b(i);                          
     bicgstab(A, solution_nonlinear[0], b, P, iter_nonlin);    
+    //bicg(A, solution_nonlinear[0], b, P, iter_nonlin);   
     
     // save solutions
     Save2File(space,space_file);
