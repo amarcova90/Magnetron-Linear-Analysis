@@ -6,15 +6,22 @@
 #include <utility>
 #include <string>
 
-void PrintInputHeader(std::ofstream& s){
-  s << "###########################################\n";
-	s << "#             Input parameters            #\n";
-	s << "###########################################\n";
+void PrintLinearInputHeader(std::ofstream& s){
+  s << "############################################\n";
+	s << "#     Linear analysis input parameters     #\n";
+	s << "############################################\n";
 }
-void PrintOutputHeader(std::ofstream& s){
-	s << "###########################################\n";
-	s << "#             Output parameters           #\n";
-	s << "###########################################\n";	
+
+void PrintNonlinearInputHeader(std::ofstream& s){
+  s << "############################################\n";
+	s << "#   Nonlinear analysis input parameters    #\n";
+	s << "############################################\n";
+}
+
+void PrintLinearOutputHeader(std::ofstream& s){
+	s << "############################################\n";
+	s << "#     Linear analysis output parameters    #\n";
+	s << "############################################\n";	
   // mode independent values
 	s <<  "#          Voltage [V]";
 	s <<  "#           ne0 [m^-3]";
@@ -118,9 +125,9 @@ void ReadLinearDatafromFile(std::ifstream& f, double& mi,     double& Te,
     }
     voltage_increment=(voltage_scale.second-voltage_scale.first)/(N_voltages-1);
     my_increment = (my_max - my_min) / (N_modes - 1);
-    f.close();
   }
-  
+  f.clear();
+  f.seekg(0, std::ios::beg);
 }
 
 void ReadNonlinearDatafromFile(std::ifstream& f, double& mi,     double& Te,
@@ -139,7 +146,8 @@ void ReadNonlinearDatafromFile(std::ifstream& f, double& mi,     double& Te,
                                         {
   ReadLinearDatafromFile(f, mi, Te, B0, n0, E0, R0, LB, Ln, De0, vix, kz, kx, 
                                                                 my_max, my_min, t, voltage_scale, voltage_increment, 
-                                                                my_increment, N_voltages, N_modes, dne_over_n0);                                                                           
+                                                                my_increment, N_voltages, N_modes, dne_over_n0);     
+  
   if (f.is_open()){
     std::string name;
     while (f >> name){
@@ -148,12 +156,13 @@ void ReadNonlinearDatafromFile(std::ifstream& f, double& mi,     double& Te,
       else if (name == "tf") f >> tf;
       else if (name == "n10_n0") f >> n10_n0;
     }
-    f.close();
+  f.clear();
+  f.seekg(0, std::ios::beg);
   }
   
 }
 
-void PrintInputData(std::ofstream& s, double& mi, double& Te, double& B0, 
+void PrintLinearInputData(std::ofstream& s, double& mi, double& Te, double& B0, 
                double& n0, double& R0, double& plasma_thickness, double& LB, double& Ln, 
                double& kz, double& kx, double& t, double& ne_over_n0,
                unsigned int& N_voltages, unsigned int& N_modes){
@@ -170,7 +179,20 @@ void PrintInputData(std::ofstream& s, double& mi, double& Te, double& B0,
 	s << "  kx                             " << kx << "\n";
   s << "  t                              " << t << "\n";
 	s << "  N_voltages                     " << N_voltages << "\n";
-	s << "  N_modes                        " << N_modes << "\n\n";
+	s << "  N_modes                        " << N_modes << "\n";
+}
+
+void PrintNonlinearInputData(std::ofstream& s, double& mi, double& Te, double& B0, 
+               double& n0, double& R0, double& plasma_thickness, double& LB, double& Ln, 
+               double& kz, double& kx, double& t, double& ne_over_n0,
+               unsigned int& N_voltages, unsigned int& N_modes,
+               int& Ni, int& Nj, double& tf, double& n10_n0){
+  PrintLinearInputData(s,mi,Te,B0,n0,R0,plasma_thickness,LB,Ln,kz,kx,t,
+                       ne_over_n0,N_voltages,N_modes);
+  s << "  Ni                             " << Ni << "\n";
+	s << "  Nj                             " << Nj << "\n";
+  s << "  tf                             " << tf << "\n";
+  s << "  n10_n0                         " << n10_n0 << "\n";
 }
 
 
