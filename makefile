@@ -30,5 +30,5 @@ $(TARGET_VAL): $(OBJS_VAL)
 clean:
 	$(RM) $(OBJS_LIN) $(TARGET_LIN) $(TARGET_VAL) *~ *.o solution.txt \
   w_solution.txt solution_figures/*.eps solution_figures/*.png \
-  solution_movies/*mp4 validation_files/*.txt \
+  solution_movies/*mp4 validation_files/*.txt validation_files/*.png \
   linear_model_solutions/*.txt
