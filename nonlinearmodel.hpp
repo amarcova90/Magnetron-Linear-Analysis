@@ -57,6 +57,8 @@ class NonlinearModel: public LinearModel {
   double tf, t, dt, dy;
   double n0, n10;
   double Q0, Z0;
+  double err_rel{1e-4};
+  double err_abs{1e-6};
   int i, Ni, Nj;
   solution_container n1, vx1, vy1, phi1;
   std::vector<complex_number> sigma_phi, r_phi;
