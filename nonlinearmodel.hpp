@@ -4,7 +4,6 @@
 #include <complex>
 #include <vector>
 #include "linearmodel.hpp"
-//#include "matrix_phi_OLDD.hpp"
 
 using namespace mtl;
 using namespace itl;
@@ -25,12 +24,20 @@ class NonlinearModel: public LinearModel {
   void solve();
   
   void solver_validation();
+
+  void RK4_validation();
   
   void resize(int Ni_new,int Nj_new);
-  
+
   private:
 
   void BuildInitialConditions();
+  
+  complex_number f_n1(int i, int j);
+  
+  complex_number f_vx1(int i, int j);
+  
+  complex_number f_vy1(int i, int j);
   
   complex_number lambda(int i, int j);
   
@@ -38,7 +45,9 @@ class NonlinearModel: public LinearModel {
   
   void build_b(int& i);
 
-  void solve_phi1(int& i);
+  void solve_phi1(int i);
+  
+  void march_RK4(int i);
   
   void SaveSolution();
   
@@ -54,20 +63,26 @@ class NonlinearModel: public LinearModel {
   
   private:
   friend class A_phi;
-  double tf, t, dt, dy;
+  double tf, dt, dy;
   double n0, n10;
   double Q0, Z0;
-  double err_rel{1e-4};
+  double err_rel{1e-3};
   double err_abs{1e-6};
   int i, Ni, Nj;
   solution_container n1, vx1, vy1, phi1;
   std::vector<complex_number> sigma_phi, r_phi;
   
+  std::vector<complex_number> k1_n1, k1_vx1, k1_vy1;
+  std::vector<complex_number> k2_n1, k2_vx1, k2_vy1;
+  std::vector<complex_number> k3_n1, k3_vx1, k3_vy1;
+  std::vector<complex_number> k4_n1, k4_vx1, k4_vy1;
+  
   dense_vector<complex_number> b;
   dense_vector<complex_number> r0;
   //A_phi* A;
  
-  double fact_phi{1.0};
+  double fact_lin{1.0};
+  
   
 };
 
@@ -96,15 +111,34 @@ class A_phi{
   template <typename VectorIn , typename VectorOut , typename Assign >
   void mult ( const VectorIn& v, VectorOut& w, Assign ) const{
     //double temp = 0.0;
-    
+    double dy = ptr->dy;
+/*     
     for(int j = 0; j < number_rows(); j++){
         Assign::apply(w[j],                        v[ptr->index(j-2)]
                                              - 8.0*v[ptr->index(j-1)]
                - (ptr->dy)*12.0*(ptr->lambda(i,j))*v[j] 
                                              + 8.0*v[ptr->index(j+1)]  
                                                 -  v[ptr->index(j+2)]); 
-    }
+    } */
+
+    for(int j = 0; j < number_rows(); j++){
+        Assign::apply(w[j],                        v[ptr->index(j-2)]/dy/12
+                                             - 8.0*v[ptr->index(j-1)]/dy/12
+               - (ptr->lambda(i,j))*v[j] 
+                                             + 8.0*v[ptr->index(j+1)]/dy/12
+                                                -  v[ptr->index(j+2)]/dy/12); 
+    }    
     
+/*     double dy = ptr->dy;
+    complex_number f;
+    for(int j = 0; j < number_rows(); j++){
+        f = dy*12.0*(ptr->lambda(i,j));
+        Assign::apply(w[j],                        v[ptr->index(j-2)]/f
+                                             - 8.0*v[ptr->index(j-1)]/f
+               - v[j] 
+                                             + 8.0*v[ptr->index(j+1)]/f  
+                                                -  v[ptr->index(j+2)]/f ); 
+    }   */  
     
     }
   
@@ -113,6 +147,17 @@ class A_phi{
   mtl::vec::mat_cvec_multiplier<A_phi, Vector>
   operator *( const Vector & v) const{
     return mtl::vec::mat_cvec_multiplier<A_phi, Vector>(*this,v); 
+  }
+
+  dense_vector<double>  operator [](int j) const{
+    dense_vector<double> out(number_columns(),0.0);
+    out[ptr->index(j-2)] = 1.0;
+    out[ptr->index(j-1)] = -8.0;
+    out[ptr->index(j)] = - std::abs( (ptr->dy)*12.0*(ptr->lambda(i,j)) );
+    out[ptr->index(j+1)] = 8.0;
+    out[ptr->index(j+2)] = -1.0;
+    
+    return out; 
   }
   
   void print_address(){
