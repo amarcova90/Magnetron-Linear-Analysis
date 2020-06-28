@@ -13,12 +13,12 @@ vix                       -890
 lambda_z                  2.5e-3
 lambda_x                  0.9e-3
 N_voltages                1000
+voltage_scale             0.4 1.4
 N_modes                   1000
 my_min                    0.1
 my_max                    7
-voltage_scale             0.4 1.4
-Ni                        1
+Ni                        6200
 Nj                        1000
-tf                        100e-6
-n10_n0                    1e-3
+tf                        6.2e-6
+n10_n0                    1e-10
 
