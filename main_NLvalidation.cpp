@@ -38,13 +38,20 @@ int main(int argc, char *argv[]){
   PrintNonlinearInputHeader(s);
   PrintNonlinearInputData(s,mi,Te,B0,n0,R0,t,LB,Ln,kz,kx,t,ne_over_n0,N_voltages,N_modes,Ni,Nj,tf,n10_n0);
 
-  int Nj_val = 500000;
+  
   NonlinearModel NLdischarge_val(mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t,
-                             Ni, Nj_val, tf, n10_n0);
-  for (int N_val = 100; N_val < Nj_val; N_val*=2){
+                             Ni, Nj, tf, n10_n0);
+
+  for (int N_val = 100; N_val < Ni; N_val*=2){
+    NLdischarge_val.resize(N_val,Nj);
+    NLdischarge_val.RK4_validation();
+  }                             
+  
+  for (int N_val = 100; N_val < Nj; N_val*=2){
     NLdischarge_val.resize(1,N_val);
     NLdischarge_val.solver_validation();
   }
+  
 
   return 0;
 }
