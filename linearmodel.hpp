@@ -17,7 +17,8 @@ class LinearModel{
               
   void set_E(const double& newE){E = newE; scale_factor = E/E0; update_all();}
 
-  double wI(const double ky){
+  // assumes 1/Ln << kx 
+  double wI(const double& ky){
     double kp = sqrt(kx*kx+ky*ky);
     double wd = vd*ky;
     double wD = vD*ky;
@@ -29,18 +30,18 @@ class LinearModel{
            (wi0-w0-wD));
   }
   
-  double alpha(const double ky){
+  double alpha(const double& ky){
     return wI(ky)-beta(ky)-gamma(ky);
   }
   
-  double beta(const double ky){
+  double beta(const double& ky){
     double kp = sqrt(kx*kx+ky*ky);
     double wd = vd*ky;
     double wD = vD*ky;
     return 1.0/8.0*pow(cs,4)*pow(kp,4)/pow((wd-wD),2);
   } 
  
-  double gamma(const double ky){
+  double gamma(const double& ky){
     double kp = sqrt(kx*kx+ky*ky);
     double wd = vd*ky;
     double wD = vD*ky;
@@ -48,7 +49,8 @@ class LinearModel{
     return 0.5*cs*cs*kp*kp/(wd-wD)*(wi0-w0-wD);
   } 
 
-  double wR(const double ky){
+  // assumes 1/Ln << kx 
+  double wR(const double& ky){
     double kp = sqrt(kx*kx+ky*ky);
     double wd = vd*ky;
     double wD = vD*ky;
@@ -65,28 +67,42 @@ class LinearModel{
     return wi0;
   }
   
-  double B(const double ky){
+  double B(const double& ky){
     double kp = sqrt(kx*kx+ky*ky);
     double wd = vd*ky;
     double wD = vD*ky;   
     return 0.5*(kp*kp*cs*cs/(wd-wD));    
   }
   
-  double C(double ky){      
+  double C(double& ky){
     return wR(ky)-A()-B(ky);    
+  }
+  
+  double wR_alter(const double& ky){
+    std::complex<double> comp = w_alter(ky);
+    return comp.real();
+  }
+
+  double wI_alter(const double& ky){
+    std::complex<double> comp = w_alter(ky);
+    return comp.imag();
   }
     
   std::complex<double> dphi_decr(const std::complex<double>& dne_over_n0){
-    double wd = vd*ky_decr;
-    double wD = vD*ky_decr;
-    double w0 = v0*ky_decr;     
-    return dne_over_n0*T*((w_decr-w0-wD)+i1*(kz*kz*De))/(wd-wD) ;
+    double kp = sqrt(kx*kx+ky_decr*ky_decr);
+    //double wd = vd*ky_decr;
+    //double wD = vD*ky_decr;
+    //double w0 = v0*ky_decr;     
+    //return dne_over_n0*T*(w_decr-w0-wD+i1*nupara)/(wd-wD) ;
+    // The following is equivalent to the form on top
+    return dne_over_n0*(w_decr-kx*vi0)*(w_decr-kx*vi0)/(e/mi*(kp*kp - i1*kx/Ln));
   }
+  
   std::complex<double> dphi_incr(const std::complex<double>& dne_over_n0){
     double wd = vd*ky_incr;
     double wD = vD*ky_incr;
     double w0 = v0*ky_incr;     
-    return dne_over_n0*T*((w_incr-w0-wD)+i1*(kz*kz*De))/(wd-wD) ;
+    return dne_over_n0*T*(w_incr-w0-wD+i1*nupara)/(wd-wD) ;
   }  
 
   
@@ -97,10 +113,10 @@ class LinearModel{
     return std::arg( dphi_incr(dne_over_n0) );
   }
   
-  std::complex<double> dvxi1_decr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvxi1_decr(const std::complex<double>& dne_over_n0){
     return  e/mi*kx/(w_decr-kx*vi0)*dphi_decr(dne_over_n0);
   }   
-  std::complex<double> dvxi1_incr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvxi1_incr(const std::complex<double>& dne_over_n0){
     return  e/mi*kx/(w_incr-kx*vi0)*dphi_incr(dne_over_n0);
   }   
 
@@ -111,10 +127,10 @@ class LinearModel{
     return std::arg( dvxi1_incr(dne_over_n0) );
   }
 
-  std::complex<double> dvyi1_decr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvyi1_decr(const std::complex<double>& dne_over_n0){
     return  e/mi*ky_decr/(w_decr-kx*vi0)*dphi_decr(dne_over_n0);
   } 
-  std::complex<double> dvyi1_incr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvyi1_incr(const std::complex<double>& dne_over_n0){
     return  e/mi*ky_incr/(w_incr-kx*vi0)*dphi_incr(dne_over_n0);
   }
 
@@ -125,10 +141,10 @@ class LinearModel{
     return std::arg( dvyi1_incr(dne_over_n0) );
   }
 
-  std::complex<double> dvxe1_EXB_decr(const std::complex<double>& dne_over_n0){   
+  std::complex<double> dvxe1_EXB_decr(const std::complex<double>& dne_over_n0){
     return  -i1*ky_decr*dphi_decr(dne_over_n0)/B0;
   }  
-  std::complex<double> dvxe1_EXB_incr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvxe1_EXB_incr(const std::complex<double>& dne_over_n0){
     return  -i1*ky_incr*dphi_incr(dne_over_n0)/B0;
   }  
   
@@ -139,10 +155,10 @@ class LinearModel{
     return std::arg( dvxe1_EXB_incr(dne_over_n0) );
   }  
   
-  std::complex<double> dvxe1_D_decr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvxe1_D_decr(const std::complex<double>& dne_over_n0){
     return  i1*T/B0*ky_decr*dne_over_n0;
   }
-  std::complex<double> dvxe1_D_incr(const std::complex<double>& dne_over_n0){     
+  std::complex<double> dvxe1_D_incr(const std::complex<double>& dne_over_n0){
     return  i1*T/B0*ky_incr*dne_over_n0;
   }
 
@@ -156,7 +172,7 @@ class LinearModel{
   double Jxi0() const{ return e*ne0*vi0;}
   double Ixi0() const{ return Jxi0()*A_plasma;}
   
-  double Jxi1_ave_decr(const std::complex<double>& dne_over_n0){ 
+  double Jxi1_ave_decr(const std::complex<double>& dne_over_n0){
    /*  // comparison with equations in the paper (leads tto same result)
     // equation in paper is speciaol case when deltan is real
     double Ji = 0.5*my_decr*e*ne0*kx/(kx*kx+ky_decr*ky_decr)*(w_decr.real()-kx*vi0);
@@ -165,28 +181,18 @@ class LinearModel{
  */    
     return 0.5*e*ne0*std::real(dne_over_n0*std::conj(dvxi1_decr(dne_over_n0)));
   }
-  double Jxi1_ave_incr(const std::complex<double>& dne_over_n0){ 
+  double Jxi1_ave_incr(const std::complex<double>& dne_over_n0){
     return 0.5*e*ne0*std::real(dne_over_n0*std::conj(dvxi1_incr(dne_over_n0)));
   }
   
-  double Ixi1_ave_decr(const std::complex<double>& dne_over_n0){ 
+  double Ixi1_ave_decr(const std::complex<double>& dne_over_n0){
     return Jxi1_ave_decr(dne_over_n0)*A_plasma;
   }
-  double Ixi1_ave_incr(const std::complex<double>& dne_over_n0){ 
+  double Ixi1_ave_incr(const std::complex<double>& dne_over_n0){
     return Jxi1_ave_incr(dne_over_n0)*A_plasma;
   }
   
   double Jxe1_EXB_ave_decr(const std::complex<double>& dne_over_n0){
-//  The following commented code compares the return value to the equation
-//  in the paper and leads to the same result. The equation in the paper is 
-//  for real dne_over_n0, so this method is more general.
-
-/*     double wd = vd*ky_decr;
-    double wD = vD*ky_decr;
-    double Jexb = -0.5*my_decr*e*ne0*ky_decr/B0*T*(nupara+w_decr.imag())/(wd-wD);
-    std::cout << Jexb << std::endl;
-    std::cout << -my_decr*0.5*e*ne0*std::real(dne_over_n0*std::conj(dvxe1_EXB_decr(dne_over_n0))) << std::endl;
- */    
     return -0.5*e*ne0*std::real(dne_over_n0*std::conj(dvxe1_EXB_decr(dne_over_n0)));
   }
   double Jxe1_EXB_ave_incr(const std::complex<double>& dne_over_n0){
@@ -308,11 +314,23 @@ class LinearModel{
   inline double get_my_incr() const{ return my_incr;}
   inline double get_my_decr() const{ return my_decr;}
   inline double get_wI_incr() const{ return w_incr.imag();}
-  inline double get_wI_decr() const{ return w_decr.imag();}  
+  inline double get_wI_decr() const{ return w_decr.imag();}
   inline double get_wR_incr() const{ return w_incr.real();}
-  inline double get_wR_decr() const{ return w_decr.real();} 
+  inline double get_wR_decr() const{ return w_decr.real();}
   
   private:
+  
+  // without assumption 1/Ln << kx 
+  std::complex<double> w_alter(const double& ky){
+    double kp = sqrt(kx*kx+ky*ky);
+    double wd = vd*ky;
+    double wD = vD*ky;
+    double w0 = v0*ky;  
+    std::complex<double> b,c;
+    b = -2.0*wi0 - (cs*cs*(kp*kp-i1*kx/Ln))/(wd-wD);
+    c = wi0*wi0 + (cs*cs*(kp*kp-i1*kx/Ln))/(wd-wD)*(w0+wD-i1*nupara);
+    return -b/2.0+sqrt(b*b/4.0-c);
+  }
   
   void update_coherent_modes(){
     my_decr = floor(my_maxgrowth);
@@ -322,11 +340,20 @@ class LinearModel{
     ky_incr = my_incr/R0;
     w_incr = std::complex<double>(wR(ky_incr),wI(ky_incr));
   }
+
+  void update_coherent_modes_alter(){
+    my_decr = floor(my_maxgrowth);
+    ky_decr = my_decr/R0;
+    w_decr = w_alter(ky_decr);
+    my_incr = ceil(my_maxgrowth);
+    ky_incr = my_incr/R0;
+    w_incr = w_alter(ky_incr);
+  }
   
   void update_wI_maxgrowth(){
     double my_min{0.01};
     double my_max{14};
-    double dmy = (my_max-my_min)/100;
+    double dmy = (my_max-my_min)/100.0;
     double wI_new;
     wI_maxgrowth = -10;
     for( double my = my_min; my <= my_max; my+=dmy){
@@ -344,11 +371,33 @@ class LinearModel{
       throw "maximum_not_found";
     }
   }
+
+  void update_wI_maxgrowth_alter(){
+    double my_min{0.01};
+    double my_max{14};
+    double dmy = (my_max-my_min)/100.0;
+    double wI_new;
+    wI_maxgrowth = -10;
+    for( double my = my_min; my <= my_max; my+=dmy){
+      wI_new = wI_alter(my/R0);
+      if (wI_new > wI_maxgrowth){
+        wI_maxgrowth = wI_new; 
+        my_maxgrowth = my;
+      }        
+    }
+    if (wI_maxgrowth < 0){
+      throw "negative_wI";
+    }
+    if (my_maxgrowth == my_min or my_maxgrowth == my_max){
+      std::cout << "maximum_not_found" << std::endl;
+      throw "maximum_not_found";
+    }
+  }
   
   void update_all(){
     T = Te*scale_factor;
     De = De0*scale_factor;
-    ne0=n0*scale_factor;
+    //ne0=n0*scale_factor;
     A_plasma = 2*M_PI*R0*t;
     ne0=n0;
     cs = sqrt(T*e/mi);
@@ -358,8 +407,10 @@ class LinearModel{
     v0 = -E/B0;
     vi0 = vix*sqrt(scale_factor);
     wi0 = kx*vi0;
-    update_wI_maxgrowth();
-    update_coherent_modes();
+    //update_wI_maxgrowth();
+    //update_coherent_modes();
+    update_wI_maxgrowth_alter();
+    update_coherent_modes_alter();
   }
   
   protected:
