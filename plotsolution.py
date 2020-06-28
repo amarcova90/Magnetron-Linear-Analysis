@@ -23,7 +23,7 @@ linesize = 3.0
 linesize_large = 4.0
 
 # subset of modes
-unique_m = (3, 4)
+unique_m = (2, 3, 4, 5)
 do_decr = True
 do_incr = True
 do_movies = False
@@ -445,7 +445,7 @@ for mode in unique_m:
     plt.plot(plasma_potential[m_decr == mode],ve1_D_phase_decr[m_decr == mode],color=colors[mode], linewidth = linesize)
     legend_list = legend_list + ["$v_e{_D}$"] 
 
-plt.legend(legend_list, fancybox = False, edgecolor = 'k' )
+# plt.legend(legend_list, fancybox = False, edgecolor = 'k' )
 plt.xlabel("E$_0$L$_n$ [V]")
 plt.ylabel("Phase [rad]")
 plt.tight_layout()
@@ -742,12 +742,12 @@ if do_movies:
 
 
 ind = find_nearest_index(ion_velocity0,-900)
-fig = plt.figure(20,figsize=(h_size, v_size))
+fig = plt.figure(80,figsize=(h_size, v_size))
 animate_currents(ind)
 plt.savefig(figures_dir+"currents_y.png", additional_artists = art, bbox_inches="tight")
 plt.savefig(figures_dir+"currents_y.eps", additional_artists = art, bbox_inches="tight")
 
-fig = plt.figure(21,figsize=(h_size, v_size))
+fig = plt.figure(81,figsize=(h_size, v_size))
 animate_segments(ind)
 plt.savefig(figures_dir+"segments_y.png", additional_artists = art, bbox_inches="tight")
 plt.savefig(figures_dir+"segments_y.eps", additional_artists = art, bbox_inches="tight")
