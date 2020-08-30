@@ -140,6 +140,13 @@ class LinearModel{
   double dvyi1_phase_incr(const std::complex<double>& dne_over_n0){
     return std::arg( dvyi1_incr(dne_over_n0) );
   }
+  
+  std::complex<double> dvzi1_decr(const std::complex<double>& dne_over_n0){
+    return  e/mi*kz/(w_decr-kx*vi0)*dphi_decr(dne_over_n0);
+  } 
+  std::complex<double> dvzi1_incr(const std::complex<double>& dne_over_n0){
+    return  e/mi*kz/(w_incr-kx*vi0)*dphi_incr(dne_over_n0);
+  }  
 
   std::complex<double> dvxe1_EXB_decr(const std::complex<double>& dne_over_n0){
     return  -i1*ky_decr*dphi_decr(dne_over_n0)/B0;
@@ -416,6 +423,7 @@ class LinearModel{
   protected:
   
   double mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t;
+  double me{9.10938e-31};
   double e{1.60217657e-19};
   double scale_factor, E, T, ne0, De, cs, nupara, vd, vD, v0, vi0, wi0,
          my_maxgrowth, wI_maxgrowth, A_plasma;
