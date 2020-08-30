@@ -17,8 +17,7 @@ voltage_scale             0.4 1.4
 N_modes                   1000
 my_min                    0.1
 my_max                    7
-Ni                        6200
-Nj                        1000
-tf                        6.2e-6
-n10_n0                    1e-10
-
+Ni                        28000
+Nj                        300
+tf                        14.0e-6
+n10_n0                    1e-3
