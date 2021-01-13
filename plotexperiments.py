@@ -22,10 +22,20 @@ unique_m = (3, 4)
 do_decr = True
 do_incr = False
 
-s1_file   = "experiment/Ar/07252020/WF_P13.csv"
-s2_file   = "experiment/Ar/07252020/WF_P14.csv"
-s3_file   = "experiment/Ar/07252020/WF_P15.csv"
-s4_file   = "experiment/Ar/07252020/WF_P16.csv"
+# s1_file   = "experiment/Ar/07252020/WF_P13.csv"
+# s2_file   = "experiment/Ar/07252020/WF_P14.csv"
+# s3_file   = "experiment/Ar/07252020/WF_P15.csv"
+# s4_file   = "experiment/Ar/07252020/WF_P16.csv"
+
+s1_file   = "experiment/Ar/01102021/WF_P07.csv"
+s2_file   = "experiment/Ar/01102021/WF_P09.csv"
+s3_file   = "experiment/Ar/01102021/WF_P09.csv"
+s4_file   = "experiment/Ar/01102021/WF_P10.csv"
+
+# s1_file   = "experiment/Ar/WF_P04.csv"
+# s2_file   = "experiment/Ar/WF_P05.csv"
+# s3_file   = "experiment/Ar/WF_P06.csv"
+# s4_file   = "experiment/Ar/07252020/WF_P16.csv"
 
 gas = s1_file[11:13]
 date = s1_file[14:22]
@@ -35,11 +45,11 @@ s1_name = s1_file[23:-4]
 cwd = os.getcwd()
 
 # save the figures in the data folder
-path = os.path.join(cwd,"experiment",gas,date,"figures") 
+# path = os.path.join(cwd,"experiment",gas,date,"figures") 
 
-# create directory if it doesn't exist
-if not os.path.isdir(path):
-  os.mkdir(path)
+# # create directory if it doesn't exist
+# if not os.path.isdir(path):
+  # os.mkdir(path)
 
 
 
@@ -59,19 +69,19 @@ with open(s1_file) as csvfile:
   for row in csvreader:
     #print(row)
     t.append(float(row[0]))
-    s1.append(float(row[1])/50.0)
+    s1.append(float(row[1]))
 
 with open(s2_file) as csvfile:
   csvreader = csv.reader(csvfile)
   next(csvreader)
   for row in csvreader:
-    s2.append(float(row[1])/50.0)
+    s2.append(float(row[1]))
 
 with open(s3_file) as csvfile:
   csvreader = csv.reader(csvfile)
   next(csvreader)
   for row in csvreader:
-    s3.append(float(row[1])/50.0)
+    s3.append(float(row[1]))
 
 with open(s4_file) as csvfile:
   csvreader = csv.reader(csvfile)
@@ -85,6 +95,8 @@ s2 = np.array(s2)
 s3 = np.array(s3)
 s4 = np.array(s4)
 
+print("ballast voltage drop = {}".format(np.mean(s4)*500)) 
+
 # remove mean value
 # s1 = s1 - np.mean(s1)
 # s2 = s2 - np.mean(s2)
@@ -94,20 +106,24 @@ s4 = np.array(s4)
 #s2 = s2/np.max(s2)
 # s1 = s1/np.max(s1)
 
-s1 = signal.detrend(s1)
-s2 = signal.detrend(s2)
+s1_detrended = signal.detrend(s1)
+s2_detrended = signal.detrend(s2)
+s3_detrended = signal.detrend(s3)
 
 R0 = 2.5e-3
 #dx = 10.9*np.pi/180.0
-dx = 11.2*np.pi/180.0
+dx = 10*np.pi/180.0
+dx = 20*np.pi/180.0
+#dx = 40.0*np.pi/180.0
 
 dt = t[1] - t[0]
-# print(dt)
+print(dt)
+#input()
 # wk2p01(s1,s2,dt,dx)
 
 
-ff1 = fft(s1)
-ff2 = fft(s2)
+ff1 = fft(s1_detrended)
+ff2 = fft(s2_detrended)
 ff1 = ff1[0:len(ff1)//2]
 ff2 = ff2[0:len(ff2)//2]
 
@@ -134,7 +150,7 @@ plt.plot(f_v,kx12)
 
 nf = 1000
 nk = 1000
-n = len(s1)
+n = len(s1_detrended)
 
 kNyq = 2*np.pi/dx/2.0			# Nyquist wavenumber
 fNyq = 1.0/dt/2.0		# Nyquist frequency
@@ -156,9 +172,9 @@ S12 = np.zeros((nf,nk),dtype = complex)
 S22 = np.zeros((nf,nk),dtype = complex)
 fsp = np.zeros(nf)
 
-wx1 = signal.cwt(s1, signal.morlet2, scale) 
+wx1 = signal.cwt(s1_detrended, signal.morlet2, scale) 
 
-wx2 = signal.cwt(s2, signal.morlet2, scale)
+wx2 = signal.cwt(s2_detrended, signal.morlet2, scale)
 
 print("len = {}".format(len(wx1)))
 
@@ -191,26 +207,34 @@ for i in range(nf):
     S22[i,ind] = S22[i,ind] + w22[j]
     S12[i,ind] = S12[i,ind] + w12[j]
     
+    
+print("ballast voltage drop = {}".format(np.mean(s4)*500))     
+
+print(S)
 
 plt.figure(figsize=(h_size, v_size))
 plt.pcolormesh(k,fz*1e-3,np.log10(S), cmap = 'jet')
+# plt.pcolormesh(k + 2*kNyq,fz*1e-3,np.log10(S), cmap = 'jet')
+# plt.pcolormesh(k - 2*kNyq,fz*1e-3,np.log10(S), cmap = 'jet')
 plt.xlabel("mode")
 plt.ylabel("frequency [kHz]")
 plt.ylim((0,10*1e3))
 plt.colorbar()
 plt.tight_layout()
-filename = os.path.join(path,"pspect_pcolormesh.png") 
-plt.savefig(filename)  
+# filename = os.path.join(path,"pspect_pcolormesh.png") 
+# plt.savefig(filename)  
 
-plt.figure(figsize=(h_size, v_size))
-plt.contourf(k,fz*1e-3,np.log10(S), cmap = 'jet')
-plt.xlabel("mode")
-plt.ylabel("frequency [kHz]")
-plt.ylim((0,10*1e3))
-plt.colorbar()
-plt.tight_layout() 
-filename = os.path.join(path,"pspect_contourf.png") 
-plt.savefig(filename)  
+# Something this looks better:
+# plt.figure(figsize=(h_size, v_size))
+# plt.contourf(k,fz*1e-3,np.log10(S), cmap = 'jet')
+# plt.xlabel("mode")
+# plt.ylabel("frequency [kHz]")
+# plt.ylim((0,10*1e3))
+# plt.colorbar()
+# plt.tight_layout()
+ 
+# filename = os.path.join(path,"pspect_contourf.png") 
+# plt.savefig(filename)  
 
 # print("f = {}".format(xfft))
 #for i in range(len(ff1))
@@ -228,8 +252,8 @@ plt.ylabel("signal amp [mA]")
 plt.legend(["s1","s2"])
 plt.tight_layout()
 plt.xlim((0,10*1e3))
-filename = os.path.join(path,"FFT.png") 
-plt.savefig(filename)  
+# filename = os.path.join(path,"FFT.png") 
+# plt.savefig(filename)  
 
 plt.figure(figsize=(h_size, v_size))
 plt.subplot(2,1,1)
@@ -240,34 +264,48 @@ plt.subplot(2,1,2)
 plt.semilogy(f_v/1e6,np.abs(ff2),'r')
 plt.tight_layout() 
 plt.axis((0,10,1e-4,1))
-filename = os.path.join(path,"FFT_logy.png") 
-plt.savefig(filename)  
+# filename = os.path.join(path,"FFT_logy.png") 
+# plt.savefig(filename)  
 
 plt.figure(figsize=(h_size, v_size))
-plt.plot(t*1e6,s1)
-plt.plot(t*1e6,s2)
+plt.plot(t*1e6,s1_detrended)
+plt.plot(t*1e6,s2_detrended)
+plt.plot(t*1e6,s3_detrended)
 plt.xlabel("time [$\mu$s]")
 plt.ylabel("signal")
-plt.legend(["s1","s2"])
-plt.xlim((0,10))
-filename = os.path.join(path,"signals.png") 
-plt.savefig(filename) 
+plt.legend(["s1","s2","s3"])
+#plt.xlim((0,10))
+plt.title("detrended signals")
+
 
 plt.figure(figsize=(h_size, v_size))
 plt.plot(t*1e6,s1)
 plt.plot(t*1e6,s2)
 plt.plot(t*1e6,s3)
-#plt.plot(t*1e6,(s1+s2+s3)*1000)
 plt.xlabel("time [$\mu$s]")
-plt.ylabel("current [mA]")
-plt.legend(["s1","s2","s3"])
+plt.ylabel("signal")
+plt.legend(["s1","s2", "s3"])
+#plt.xlim((0,10))
+plt.title("raw signals")
 
-plt.figure(figsize=(h_size, v_size))
-plt.plot(t*1e6,s4)
-#plt.plot(t*1e6,(s1+s2+s3)*1000)
-plt.xlabel("time [$\mu$s]")
-plt.ylabel("current [mA]")
-plt.legend(["s4"])
+# filename = os.path.join(path,"signals.png") 
+# plt.savefig(filename) 
+
+# plt.figure(figsize=(h_size, v_size))
+# plt.plot(t*1e6,s1)
+# plt.plot(t*1e6,s2)
+# plt.plot(t*1e6,s3)
+# #plt.plot(t*1e6,(s1+s2+s3)*1000)
+# plt.xlabel("time [$\mu$s]")
+# plt.ylabel("current [mA]")
+# plt.legend(["s1","s2","s3"])
+
+# plt.figure(figsize=(h_size, v_size))
+# plt.plot(t*1e6,s4)
+# #plt.plot(t*1e6,(s1+s2+s3)*1000)
+# plt.xlabel("time [$\mu$s]")
+# plt.ylabel("current [mA]")
+# plt.legend(["s4"])
 
 
 
@@ -287,33 +325,33 @@ scale = 1.0/(f*dt) # array of wavelet scales
 # plt.figure(figsize=(h_size, v_size))
 # plt.plot(t*1e6,wx[0])
 
-Z1 = signal.cwt(s1, signal.morlet2, scale) 
+Z1 = signal.cwt(s1_detrended, signal.morlet2, scale) 
 
-Z2 = signal.cwt(s2, signal.morlet2, scale) 
+Z2 = signal.cwt(s2_detrended, signal.morlet2, scale) 
 
 fz = pywt.scale2frequency('morl', scale)/dt
 
 plt.figure(figsize=(h_size, v_size))
-plt.contourf(t*1e6,fz*1e-3,np.abs(Z1), cmap = 'jet')
+plt.contourf(t*1e6,np.log10(fz),np.abs(Z1), cmap = 'jet')
 plt.colorbar()
 plt.ylim((0,10*1e3))
 plt.xlabel("time [$\mu$s]")
 plt.ylabel("frequency [kHz]")
 plt.title("signal 1")
 plt.tight_layout()
-filename = os.path.join(path,"signal1Morlet_contourf.png") 
-plt.savefig(filename) 
+# filename = os.path.join(path,"signal1Morlet_contourf.png") 
+# plt.savefig(filename) 
 
 plt.figure(figsize=(h_size, v_size))
-plt.contourf(t*1e6,fz*1e-3,np.abs(Z2), cmap = 'jet')
+plt.contourf(t*1e6,np.log10(fz),np.abs(Z2), cmap = 'jet')
 plt.colorbar()
 plt.ylim((0,10*1e3))
 plt.xlabel("time [$\mu$s]")
 plt.ylabel("frequency [kHz]")
 plt.title("signal 1")
 plt.tight_layout()
-filename = os.path.join(path,"signal2Morlet_contourf.png") 
-plt.savefig(filename) 
+# filename = os.path.join(path,"signal2Morlet_contourf.png") 
+# plt.savefig(filename) 
 
 
 plt.figure(figsize=(h_size, v_size))
@@ -324,8 +362,8 @@ plt.xlabel("time [$\mu$s]")
 plt.ylabel("frequency [kHz]")
 plt.title("signal 1")
 plt.tight_layout()
-filename = os.path.join(path,"signal1Morlet_contour.png") 
-plt.savefig(filename) 
+# filename = os.path.join(path,"signal1Morlet_contour.png") 
+# plt.savefig(filename) 
 
 
 plt.figure(figsize=(h_size, v_size))
@@ -336,8 +374,9 @@ plt.xlabel("time [$\mu$s]")
 plt.ylabel("frequency [kHz]")
 plt.title("signal 2")
 plt.tight_layout() 
-filename = os.path.join(path,"signal2Morlet_contour.png") 
-plt.savefig(filename) 
+# filename = os.path.join(path,"signal2Morlet_contour.png") 
+# plt.savefig(filename) 
+
 
 plt.show()
 
