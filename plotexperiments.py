@@ -1,5 +1,6 @@
 from scipy import signal
 import numpy as np
+from numpy import unravel_index
 import matplotlib.pyplot as plt
 import csv
 import glob
@@ -27,10 +28,23 @@ do_incr = False
 # s3_file   = "experiment/Ar/07252020/WF_P15.csv"
 # s4_file   = "experiment/Ar/07252020/WF_P16.csv"
 
-s1_file   = "experiment/Ar/01102021/WF_P07.csv"
-s2_file   = "experiment/Ar/01102021/WF_P09.csv"
-s3_file   = "experiment/Ar/01102021/WF_P09.csv"
-s4_file   = "experiment/Ar/01102021/WF_P10.csv"
+s1_file   = "experiment/Ar/01062021/WF_P02.csv"
+s2_file   = "experiment/Ar/01062021/WF_P03.csv"
+s3_file   = "experiment/Ar/01062021/WF_P03.csv"
+s4_file   = "experiment/Ar/01062021/WF_P04.csv"
+
+excelfile = "experiment/Testing_2020_test.xlsx"
+
+df = pd.read_excel(excelfile, sheet_name = '02102021')
+
+
+
+print(df["file name current 4"][1])
+
+for number in df["file name current 4"]:
+  print(number)
+
+df["Ballast DV"][1] = "ciao"
 
 # s1_file   = "experiment/Ar/WF_P04.csv"
 # s2_file   = "experiment/Ar/WF_P05.csv"
@@ -113,7 +127,7 @@ s3_detrended = signal.detrend(s3)
 R0 = 2.5e-3
 #dx = 10.9*np.pi/180.0
 dx = 10*np.pi/180.0
-dx = 20*np.pi/180.0
+# dx = 20*np.pi/180.0
 #dx = 40.0*np.pi/180.0
 
 dt = t[1] - t[0]
@@ -158,6 +172,9 @@ fupper = fNyq/2.001	# maximum resolvable frequency
 flower = 4.0/dt/n		# minimum resolvable frequency
 
 f = np.logspace(np.log10(flower),np.log10(fupper),nf)
+
+#f = np.linspace(3e6,6e6,nf)
+
 #f = np.linspace(flower,fupper,nf)
 #print(f)
 scale = 1/(f*dt)
@@ -212,6 +229,17 @@ print("ballast voltage drop = {}".format(np.mean(s4)*500))
 
 print(S)
 
+
+i_f, i_t = np.unravel_index(np.argmax(S), S.shape)
+
+
+m_maxf = k[i_t]
+maxf = fz[i_f]
+
+print("Max frequency, mode:")
+print(maxf)
+print(m_maxf)
+
 plt.figure(figsize=(h_size, v_size))
 plt.pcolormesh(k,fz*1e-3,np.log10(S), cmap = 'jet')
 # plt.pcolormesh(k + 2*kNyq,fz*1e-3,np.log10(S), cmap = 'jet')
@@ -223,6 +251,8 @@ plt.colorbar()
 plt.tight_layout()
 # filename = os.path.join(path,"pspect_pcolormesh.png") 
 # plt.savefig(filename)  
+
+plt.plot(m_maxf, maxf*1e-3,'o')
 
 # Something this looks better:
 # plt.figure(figsize=(h_size, v_size))
@@ -270,7 +300,7 @@ plt.axis((0,10,1e-4,1))
 plt.figure(figsize=(h_size, v_size))
 plt.plot(t*1e6,s1_detrended)
 plt.plot(t*1e6,s2_detrended)
-plt.plot(t*1e6,s3_detrended)
+#plt.plot(t*1e6,s3_detrended)
 plt.xlabel("time [$\mu$s]")
 plt.ylabel("signal")
 plt.legend(["s1","s2","s3"])
@@ -288,6 +318,12 @@ plt.legend(["s1","s2", "s3"])
 #plt.xlim((0,10))
 plt.title("raw signals")
 
+
+print("Currents 1, 2, 3, sum [mA]:")
+print(np.mean(s1)/50*1000)
+print(np.mean(s2)/50*1000)
+print(np.mean(s3)/50*1000)
+print(np.mean(s1)/50*1000+np.mean(s2)/50*1000+np.mean(s3)/50*1000)
 # filename = os.path.join(path,"signals.png") 
 # plt.savefig(filename) 
 
@@ -355,7 +391,7 @@ plt.tight_layout()
 
 
 plt.figure(figsize=(h_size, v_size))
-plt.contour(t,fz*1e-3,np.abs(Z1))
+plt.contourf(t,fz*1e-3,np.abs(Z1),levels = 100, cmap = 'jet')
 plt.colorbar()
 plt.ylim((0,10*1e3))
 plt.xlabel("time [$\mu$s]")
@@ -365,9 +401,30 @@ plt.tight_layout()
 # filename = os.path.join(path,"signal1Morlet_contour.png") 
 # plt.savefig(filename) 
 
+i_f, i_t = np.unravel_index(np.argmax(Z1), Z1.shape)
+
+
+t_maxf = t[i_t]
+maxf = fz[i_f]
+
+plt.plot(t_maxf, maxf*1e-3,'x')
+
+
+# print(maxf)
+# print(fz[i_f])
+# print(fz[i_f+1])
+# print(len(fz))
+
+
+w12 = ff1*np.conj(ff2)
+#print(w12)
+kx12 = np.angle(w12)/dx
+
+# print("main mode = {}".format(kx12[indx]))
+# print("main frequency = {}".format(f_v[indx]))
 
 plt.figure(figsize=(h_size, v_size))
-plt.contour(t,fz*1e-3,np.abs(Z2))
+plt.contourf(t,fz*1e-3,np.abs(Z2),levels = 100, cmap = 'jet')
 plt.colorbar()
 plt.ylim((0,10*1e3))
 plt.xlabel("time [$\mu$s]")
