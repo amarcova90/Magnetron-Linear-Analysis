@@ -1,15 +1,19 @@
 #pragma once
 #include <boost/numeric/mtl/mtl.hpp>
 #include <boost/numeric/itl/itl.hpp>
+#include <boost/thread.hpp>
+#include "boost/filesystem/operations.hpp"
 #include <complex>
 #include <vector>
 #include "linearmodel.hpp"
+#include <time.h>
 
 using namespace mtl;
 using namespace itl;
 
 using complex_number = std::complex<double>;
 using solution_container = std::vector<dense_vector<complex_number>>;
+//typedef std::chrono::high_resolution_clock Clock;
 
 class NonlinearModel: public LinearModel {
   
@@ -34,10 +38,6 @@ class NonlinearModel: public LinearModel {
   void BuildInitialConditions();
   
   complex_number f_n1(int i, int j);
-  
-  complex_number f_vx1(int i, int j);
-  
-  complex_number f_vy1(int i, int j);
   
   complex_number f_lap1(int i, int j);
   
@@ -78,9 +78,14 @@ class NonlinearModel: public LinearModel {
   double n0, n10;
   double Q0, Z0;
   double wce, rL2, nu;
-  double D_ = 1.32e-9;
+  double D_ = 5.0e-3;
   double err_rel{1e-3};
   double err_abs{1e-6};
+  double vp, wR_decr; //phase velocity
+  double chix, chix2, chix4, chiz, chiz2, chiz4;
+  complex_number cn0, cn1, cn2, cn3, cn4;
+  complex_number cl0, cl1, cl2, cl3, cl4;
+  complex_number cp0, cp1;
   int i, Ni, Nj;
   solution_container n1, vx1, vy1, phi1, chi1, lap1;
   
@@ -136,7 +141,7 @@ class A_phi{
                                              + 8.0*v[ptr->index(j+1)]  
                                                 -  v[ptr->index(j+2)]); 
     } */
-
+    //#pragma omp parallel for
     for(int j = 0; j < number_rows(); j++){
         Assign::apply(w[j],                        v[ptr->index(j-2)]
                                              - 8.0*v[ptr->index(j-1)]
@@ -213,13 +218,13 @@ class A_chi{
   void mult ( const VectorIn& v, VectorOut& w, Assign ) const{
     //double temp = 0.0;
     double dy = ptr->dy;
-    double kx = ptr->kx;
-    double kz = ptr->kz;
+    complex_number cl3 = ptr->cl3;
     
+      //#pragma omp parallel for
       for(int j = 0; j < number_rows(); j++){
           Assign::apply(w[j],                        -v[ptr->index(j-2)]
                                                + 16.0*v[ptr->index(j-1)]
-                   - (30.0+12.0*dy*dy*(kx*kx+kz*kz))*v[j]
+                              - (30.0+12.0*dy*dy*cl3)*v[j]
                                                + 16.0*v[ptr->index(j+1)]
                                                      -v[ptr->index(j+2)]); 
       }    
@@ -270,3 +275,5 @@ inline std::size_t num_rows (const mat & A){ return A.number_rows();}
 /** The number of columns in the matrix . */
 template <typename mat>
 inline std::size_t num_cols (const mat & A){ return A.number_columns();}
+
+void print_simulation_time(double ts);

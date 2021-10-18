@@ -4,7 +4,7 @@
 #include <vector>
 #include <string> 
 #include "nonlinearmodel.hpp"
-
+#include <iomanip>      // std::setprecision
 
 namespace mtl{
   template <>
@@ -42,15 +42,55 @@ NonlinearModel::NonlinearModel(double& mi_,  double& Te_, double& B0_, double& E
               Ln_, De0_, vix_, kz_, kx_, n0_, t_), 
               tf{tf_}, n0{n0_}, n10{n10_n0_*n0} {
               
+              
+              wR_decr = get_wR_decr();
+              vp = wR_decr/ky_decr;
+              chix =kx/ky_decr; chiz = kz/ky_decr;
+              chix2 = chix*chix;
+              chiz2 = chiz*chiz;
+              chix4 = chix2*chix2;
+              chiz4 = chiz2*chiz2;
+              
+              
               // initialize the memory for solutions
               resize(Ni_,Nj_);              
               Z0 = n0/B0/Ln - 2.0*n0/B0/LB; Q0 = E0/B0 + 2.0*Te/B0/LB;
               wce = e*B0/me;
               nu = 0.0*1.0e5;  
               rL2 = Te/B0/wce;
-              std::cout << "wce = " << wce << std::endl; 
-              std::cout << "rL2 = " << rL2 << std::endl; 
-              std::cout << "nupara = " << nupara << std::endl; 
+              
+              
+
+              
+              cn0 = Q0/vp;
+              cn1 = i1*kx/B0/vp*Te;
+              cn2 = Z0/n0*Te/vp;
+              cn3 = (i1*kx/B0-2.0/B0/Ln)*Te/vp;
+              cn4 = -(nupara/wR_decr + D_*(chix4 + chiz4));
+              
+              cl0 = -(i1*kx*vi0/wR_decr + D_*(chix4 + chiz4));
+              cl1 = e/mi*Te/vp/vp;
+              cl2 = -e/mi*Te*(kx*kx/wR_decr/wR_decr + kz*kz/wR_decr/wR_decr);
+              cl3 = chix2 + chiz2;
+              cl4 = 2.0*cl3*cl3;
+              
+              cp0 = nupara/wR_decr - i1*kx*vi0/wR_decr;
+              cp1 = i1*chix/Ln/ky_decr;
+
+              std::cout << "vp = " << vp << std::endl; 
+              std::cout << "cn0 = " << cn0 << std::endl; 
+              std::cout << "cn1 = " << cn1 << std::endl; 
+              std::cout << "cn2 = " << cn2 << std::endl;
+              std::cout << "cn3 = " << cn3 << std::endl;
+              std::cout << "cn4 = " << cn4 << std::endl;
+              std::cout << "cl0 = " << cl0 << std::endl;
+              std::cout << "cl1 = " << cl1 << std::endl;
+              std::cout << "cl2 = " << cl2 << std::endl;
+              std::cout << "cl3 = " << cl3 << std::endl;
+              std::cout << "cl4 = " << cl4 << std::endl;
+              std::cout << "cp0 = " << cp0 << std::endl;
+              std::cout << "cp1 = " << cp1 << std::endl;
+              //getchar();
 }
 
 void NonlinearModel::BuildInitialConditions(){
@@ -58,16 +98,17 @@ void NonlinearModel::BuildInitialConditions(){
   //double dy_ = (2*M_PI*R0 - dy)/ Nj;
   for( int j = 0; j < Nj+1; j++){
     y = dy*j;
-    n1[0][j]   = n10                 * ( cos(my_decr/R0*y) +i1*sin(my_decr/R0*y) );
-    vx1[0][j]  = dvxi1_decr(n10/n0)  * ( cos(my_decr/R0*y) +i1*sin(my_decr/R0*y) );
-    vy1[0][j]  = dvyi1_decr(n10/n0)  * ( cos(my_decr/R0*y) +i1*sin(my_decr/R0*y) );
-    vz10[j]    = dvzi1_decr(n10/n0)  * ( cos(my_decr/R0*y) +i1*sin(my_decr/R0*y) );
+    n1[0][j]   = n10/n0              * ( cos(y) + i1*sin(y) );
+    vx1[0][j]  = dvxi1_decr(n10/n0)  * ( cos(y) + i1*sin(y) );
+    vy1[0][j]  = dvyi1_decr(n10/n0)  * ( cos(y) + i1*sin(y) );
+    vz10[j]    = dvzi1_decr(n10/n0)  * ( cos(y) + i1*sin(y) );
   }
   
   for( int j = 0; j < Nj+1; j++){
-    y = dy*j;
-    lap1[0][j]    = - i1*kx*vx1[0][j] - d_y(vy1[0],j) - i1*kz*vz10[j];
+    lap1[0][j]    = - i1*kx*vx1[0][j]/wR_decr - d_y(vy1[0],j)/vp - i1*kz*vz10[j]/wR_decr;
+    //std::cout << "lap1[0][j] = "<< lap1[0][j] << std::endl;
   }
+  
   
 /*   dense_vector<complex_number> test3(Nj+1);
    */
@@ -89,18 +130,27 @@ void NonlinearModel::BuildInitialConditions(){
 }
   
 void NonlinearModel::solve(){
+  clock_t t = clock();
   solve_chi1(0);
   solve_phi1(0);
   for(int i = 1; i < Ni+1; i++){
     march_RK4(i);
-    std::cout << "simulation time [sec]: " << dt*i  << std::endl;      
+/*     std::cout << std::setprecision(5);
+    std::cout <<  "simulation time [sec]: " << i*dt/wR_decr; */
+    std::cout << std::setprecision(4);
+    std::cout << "Progress [%] = "<< (double)i/Ni*100 << std::endl;      
   }
+  t = clock() - t;
+  print_simulation_time(((double)t)/CLOCKS_PER_SEC);
+  //std::cout << "simulation time: " 
+  //            << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count()*1e-9
+  //            << " s" << std::endl;
   SaveSolution();
 }
 
   
 complex_number NonlinearModel::lambda(int i, int j){
-  return fact_lin*i1*kx/B0*d_y(n1[i], j) / (Z0 + (i1*kx/B0 - 2.0/B0/LB)*n1[i][j] );
+  return fact_lin*cn1*d_y(n1[i], j) / (cn2+cn3*n1[i][j] );
 
 }
 
@@ -112,10 +162,8 @@ complex_number NonlinearModel::lambda(int i, int j){
 } */
 
 complex_number NonlinearModel::g(int& i, int j){
-  return -( (Q0-fact_lin*d_y(chi1[i],j))*d_y(n1[i],j) + i1*kx*vi0*n1[i][j] +
-            (kx*kx )*chi1[i][j]*n1[i][j] - i1*n0/Ln*kx*chi1[i][j] - 
-            nupara*n1[i][j] - (n0 + n1[i][j])*(d2_y(chi1[i],j)-kx*kx*chi1[i][j]) ) /
-         ( Z0 + fact_lin*( i1*kx/B0 - 2.0/B0/LB )*n1[i][j] );
+  return (-cn0*d_y(n1[i],j) - cl3*chi1[i][j]*n1[i][j] + cp0*n1[i][j] + cp1*chi1[i][j] + 
+          d_y(chi1[i],j)*d_y(n1[i],j) + (1.0+n1[i][j])*lap1[i][j])/(cn2+cn3*n1[i][j]);
 }
   
 /* complex_number NonlinearModel::g(int& i, int j){
@@ -175,46 +223,28 @@ complex_number NonlinearModel::f_n1(int i, int j){
 /*   return  (Q0 - fact_lin* i1*kx/B0*phi1[i][j])*d_y(n1[i],j) + 
           (Z0 + fact_lin* i1*kx/B0*n1[i][j] - fact_lin* 2*n1[i][j]/B0/LB)*d_y(phi1[i],j) -
            nupara*n1[i][j] ; */
-  return  (Q0 - fact_lin* i1*kx/B0*phi1[i][j])*d_y(n1[i],j) + 
-          (Z0 + fact_lin* i1*kx/B0*n1[i][j] - fact_lin* 2.0*n1[i][j]/B0/LB)*d_y(phi1[i],j)
-          - nu*n0*rL2/Te*d2_y(phi1[i],j) + nu*n0*rL2/Te*kx*kx*phi1[i][j]
-          + nu*rL2*d2_y(n1[i],j) - (nupara+0.0*nu*rL2*kx*kx)*n1[i][j] -
-          D_*(kx*kx*kx*kx + kz*kz*kz*kz)*n1[i][j] - D_*d4_y(n1[i],j);
-}
-
-complex_number NonlinearModel::f_vx1(int i, int j){
-    return  - fact_lin* vy1[i][j]*d_y(vx1[i],j) - vi0*i1*kx*vx1[i][j] - 
-             e*i1*kx/mi*phi1[i][j];
-}  
-
-complex_number NonlinearModel::f_vy1(int i, int j){
-  return  -vi0*i1*kx*vy1[i][j] - fact_lin* vx1[i][j]*i1*kx*vy1[i][j] - 
-           e/mi*d_y(phi1[i],j);               
-}  
+  return  (cn0-cn1*phi1[i][j])*d_y(n1[i],j) + (cn2 + cn3*n1[i][j])*d_y(phi1[i],j) +
+           cn4*n1[i][j] - D_*d4_y(n1[i],j);
+} 
 
 complex_number NonlinearModel::f_lap1(int i, int j){
-  return  -vi0*i1*kx*lap1[i][j] + e/mi*( d2_y(phi1[i],j) - (kx*kx + kz*kz)*phi1[i][j] ) + 
-           d2_y(chi1[i],j)*d2_y(chi1[i],j) + d_y(chi1[i],j)*d3_y(chi1[i],j) - 
-           3.0*(kx*kx + kz*kz)*d_y(chi1[i],j)*d_y(chi1[i],j) - 
-           (kx*kx + kz*kz)*chi1[i][j]*d2_y(chi1[i],j) + 
-           2.0*(kx*kx + kz*kz)*(kx*kx + kz*kz)*chi1[i][j]*chi1[i][j] -
-           D_*(kx*kx*kx*kx + kz*kz*kz*kz)*lap1[i][j] - D_*d4_y(lap1[i],j);               
+  return  cl0*lap1[i][j] + cl1*d2_y(phi1[i],j) + cl2*phi1[i][j] + d2_y(chi1[i],j)*d2_y(chi1[i],j) +
+          d_y(chi1[i],j)*d3_y(chi1[i],j) - cl3*(3.0*d_y(chi1[i],j)*d_y(chi1[i],j) +
+          chi1[i][j]*d2_y(chi1[i],j)) + cl4*chi1[i][j]*chi1[i][j] - D_*d4_y(lap1[i],j);               
 }  
 
 void NonlinearModel::march_RK4(int i){
   
   // Update k1
+  //#pragma omp parallel for
   for(int j = 0; j < spacesteps_number(); j++){
     k1_n1[j] =  f_n1(i-1,j)  *dt;
-    k1_vx1[j] = f_vx1(i-1,j) *dt;
-    k1_vy1[j] = f_vy1(i-1,j)*dt;
     k1_lap1[j] = f_lap1(i-1,j)*dt;
   }    
   
+  //#pragma omp parallel for
   for(int j = 0; j < spacesteps_number(); j++){
     n1[i][j] = n1[i-1][j] + 0.5*k1_n1[j]; // temp for k2
-    vx1[i][j] = vx1[i-1][j] + 0.5*k1_vx1[j]; // temp for k2
-    vy1[i][j] = vy1[i-1][j] + 0.5*k1_vy1[j]; // temp for k2 
     lap1[i][j] = lap1[i-1][j] + 0.5*k1_lap1[j];
   }    
   
@@ -223,17 +253,15 @@ void NonlinearModel::march_RK4(int i){
   solve_phi1(i);     
   
   // Update k2
+  //#pragma omp parallel for
   for(int j = 0; j < spacesteps_number(); j++){
     k2_n1[j] =  f_n1(i,j)*dt;
-    k2_vx1[j] = f_vx1(i,j)*dt;    
-    k2_vy1[j] = f_vy1(i,j)*dt;    
     k2_lap1[j] = f_lap1(i,j)*dt;    
   }
 
+  //#pragma omp parallel for
   for(int j = 0; j < spacesteps_number(); j++){           
     n1[i][j] = n1[i-1][j] + 0.5*k2_n1[j]; // temp for k3 
-    vx1[i][j] = vx1[i-1][j] + 0.5*k2_vx1[j]; // temp for k3 
-    vy1[i][j] = vy1[i-1][j] + 0.5*k2_vy1[j]; // temp for k3 
     lap1[i][j] = lap1[i-1][j] + 0.5*k2_lap1[j];
   }
   
@@ -241,17 +269,15 @@ void NonlinearModel::march_RK4(int i){
   solve_chi1(i);
   solve_phi1(i);
   // Update k3
+  //#pragma omp parallel for
   for(int j = 0; j < spacesteps_number(); j++){
     k3_n1[j] = f_n1(i,j)*dt;
-    k3_vx1[j] = f_vx1(i,j)*dt;
-    k3_vy1[j] = f_vy1(i,j)*dt;
     k3_lap1[j] = f_lap1(i,j)*dt;
   }
 
+  //#pragma omp parallel for
   for(int j = 0; j < spacesteps_number(); j++){  
     n1[i][j] = n1[i-1][j] + k3_n1[j]; // temp for k3 
-    vx1[i][j] = vx1[i-1][j] + k3_vx1[j]; // temp  
-    vy1[i][j] = vy1[i-1][j] + k3_vy1[j]; // temp for k4
     lap1[i][j] = lap1[i-1][j] + k3_lap1[j];
   }
   
@@ -259,22 +285,27 @@ void NonlinearModel::march_RK4(int i){
   solve_chi1(i);
   solve_phi1(i);
   
+  //#pragma omp parallel for
   for(int j = 0; j < spacesteps_number(); j++){
     k4_n1[j] = f_n1(i,j)*dt;
-    k4_vx1[j] = f_vx1(i,j)*dt;
-    k4_vy1[j] = f_vy1(i,j)*dt;
     k4_lap1[j] = f_lap1(i,j)*dt;
   }
   
   // Compute next step
+  //#pragma omp parallel for
   for(int j = 0; j < spacesteps_number(); j++){
-    n1[i][j] =  n1[i-1][j]  + (k1_n1[j]  + 2*k2_n1[j]  + 2*k3_n1[j]  + k4_n1[j])/6;
-    vx1[i][j] = vx1[i-1][j] + (k1_vx1[j] + 2*k2_vx1[j] + 2*k3_vx1[j] + k4_vx1[j])/6;
-    vy1[i][j] = vy1[i-1][j] + (k1_vy1[j] + 2*k2_vy1[j] + 2*k3_vy1[j] + k4_vy1[j])/6;
-    lap1[i][j] = lap1[i-1][j] + (k1_lap1[j] + 2*k2_lap1[j] + 2*k3_lap1[j] + k4_lap1[j])/6;
+    n1[i][j] =  n1[i-1][j]  + (k1_n1[j]  + 2*k2_n1[j]  + 2*k3_n1[j]  + k4_n1[j])/6.0;
+    lap1[i][j] = lap1[i-1][j] + (k1_lap1[j] + 2*k2_lap1[j] + 2*k3_lap1[j] + k4_lap1[j])/6.0;
    }    
   solve_chi1(i);
   solve_phi1(i);
+
+// updating velocities
+  //#pragma omp parallel for
+  for(int j = 0; j < spacesteps_number(); j++){
+    vx1[i][j] =  -i1*chix*vp*chi1[i][j];
+    vy1[i][j] =  -vp*d_y(chi1[i],j);
+   }    
   
 }
   
@@ -313,8 +344,8 @@ void NonlinearModel::resize(int Ni_new,int Nj_new){
   k4_vy1.resize(Nj+1);    
   k4_lap1.resize(Nj+1);
 
-  dy = 2*M_PI*R0/(Nj+1.0);
-  dt = tf/Ni;
+  dy = 2*M_PI*my_decr/(Nj+1.0);
+  dt = tf/Ni*wR_decr;
   b.change_dim(spacesteps_number());
   b_chi.change_dim(spacesteps_number());
   r0.change_dim(spacesteps_number());
@@ -342,12 +373,12 @@ void NonlinearModel::solver_validation(){
                                      kx*dvxi1_decr(n10/n0) + my_decr*dvyi1_decr(n10/n0)/R0 - \
                                      i1*dvxi1_decr(n10/n0)/Ln ); */
   
-  phi1_amp = dphi_decr(n10/n0);
+  phi1_amp = dphi_decr(n10/n0)/Te;
   
   for( int j = 0; j < Nj+1; j++){
     y = dy*j;
     space[0][j] = dy*j;
-    exact_linear[0][j] = phi1_amp  * ( cos(my_decr/R0*y) +i1*sin(my_decr/R0*y) );
+    exact_linear[0][j] = phi1_amp*( cos(y) + i1*sin(y) );
   }
   
   // compute linear solution using solver
@@ -363,7 +394,7 @@ void NonlinearModel::solver_validation(){
   
   r0 = b - A*x0;
   
-  noisy_iteration<double> iter_lin{r0, 10000, err_rel, err_abs};
+  noisy_iteration<double> iter_lin{r0, Nj, err_rel, err_abs};
   
   bicgstab(A, solution_linear[0], b, P, iter_lin);
   //bicg(A, solution_linear[0], b, P, iter_lin);
@@ -375,7 +406,7 @@ void NonlinearModel::solver_validation(){
   r0 = b - A*x0;
 
   
-  noisy_iteration<double> iter_nonlin{r0, 10000, err_rel, err_abs};
+  noisy_iteration<double> iter_nonlin{r0, Nj, err_rel, err_abs};
   build_b(i);                          
   bicgstab(A, solution_nonlinear[0], b, P, iter_nonlin);    
   //bicg(A, solution_nonlinear[0], b, P, iter_nonlin);   
@@ -405,8 +436,8 @@ void NonlinearModel::RK4_validation(){
   for( int i = 0; i < Ni+1; i++){
     t = dt*i;
     time[0][i] = dt*i;
-    exact_linear[0][i] = n10/n0 * exp(get_wI_decr()*t) * ( cos(get_wR_decr()*t) + i1*sin(get_wI_decr()*t) );
-    solution_nonlinear[0][i] = n1[i][0]/n0;
+    exact_linear[0][i] = n10/n0 * exp(get_wI_decr()/wR_decr*t) * ( cos(wR_decr*t) + i1*sin(get_wI_decr()*t) );
+    solution_nonlinear[0][i] = n1[i][0];
   }    
   
 
@@ -414,7 +445,7 @@ void NonlinearModel::RK4_validation(){
   fact_lin = 0.0;
   solve();
   for( int i = 0; i < Ni+1; i++){
-    solution_linear[0][i] = n1[i][0]/n0;
+    solution_linear[0][i] = n1[i][0];
   }      
   //std::cout << "wI = " << get_wI_decr() << std::endl;
 
@@ -484,24 +515,12 @@ complex_number NonlinearModel::d4_y(const dense_vector<complex_number>& f, int& 
   return (-f[index(j+3)]+12.0*f[index(j+2)]-39.0*f[index(j+1)]+56.0*f[index(j)]-39.0*f[index(j-1)]+12.0*f[index(j-2)]-f[index(j-3)])/6.0/dy4;  
 }  
 
-/* complex_number NonlinearModel::d4_y(const dense_vector<complex_number>& f, int& j){
-  std::complex<double> dy4 = 6.0*dy*dy*dy*dy;
-  std::complex<double> f_p3 =  -f[index(j+3)];
-  std::complex<double> f_p2 =  12.0*f[index(j+2)];
-  std::complex<double> f_p1 =  -39.0*f[index(j+1)];
-  std::complex<double> f_ =  56.0*f[index(j)];
-  std::complex<double> f_m1 =  -39.0*f[index(j-1)];
-  std::complex<double> f_m2 =  12.0*f[index(j-2)];
-  std::complex<double> f_m3 =  -f[index(j-3)];
-  //std::cout << (-f_p3+f_p2-f_p1+f_-f_m1+f_m2-f_m3) << std::endl;
-  //std::cout << dy4 << std::endl;
-  std::complex<double> out_long = (f_p3+f_p2+f_p1+f_+f_m1+f_m2+f_m3)/dy4;  
-  
-  return (complex_number)out_long;
-}   */
 
-/* complex_number NonlinearModel::d4_y2(const dense_vector<complex_number>& f, int& j){
-  long double dy4 = dy*dy*dy*dy;
-  return (1.0L*(std::complex<long double>)f[index(j+2)]-4.0L*(std::complex<long double>)f[index(j+1)]+6.0L*(std::complex<long double>)f[index(j)]-4.0L*(std::complex<long double>)f[index(j-1)]+1.0L*(std::complex<long double>)f[index(j-2)])/dy4;  
-}   */
-
+void print_simulation_time(double ts){
+  //ts = ts*1e-9; //ns to s
+  int h,m,s;
+  h = (int)(ts/3600.0);
+  m = (int)((ts-h*3600.0)/60.0);
+  s = (int)(ts-h*3600.0-m*60.0);
+  std::cout << "simulation time = " << h << " hours " << m << " minutes " << s << " seconds." << std::endl;
+}

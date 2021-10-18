@@ -195,5 +195,3 @@ void PrintNonlinearInputData(std::ofstream& s, double& mi, double& Te, double& B
   s << "  n10_n0                         " << n10_n0 << "\n";
 }
 
-
-

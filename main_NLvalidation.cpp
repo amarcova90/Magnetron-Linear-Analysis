@@ -42,10 +42,10 @@ int main(int argc, char *argv[]){
   NonlinearModel NLdischarge_val(mi, Te, B0, E0, R0, LB, Ln, De0, vix, kz, kx, n0, t,
                              Ni, Nj, tf, n10_n0);
 
-  for (int N_val = 100; N_val < Ni; N_val*=2){
+/*   for (int N_val = 50; N_val < Ni; N_val*=2){
     NLdischarge_val.resize(N_val,Nj);
     NLdischarge_val.RK4_validation();
-  }                             
+  }   */                           
   
   for (int N_val = 100; N_val < Nj; N_val*=2){
     NLdischarge_val.resize(1,N_val);
