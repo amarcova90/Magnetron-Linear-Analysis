@@ -171,95 +171,95 @@ plt.ylabel("error")
 plt.tight_layout() 
 plt.savefig("validation_files/Convergence_solver.png") 
 
-# RK4 validation
+# # RK4 validation
 
-Ni_v = []
-solution_exact_RK4 = {}
-solution_nonlinear_RK4 = {}
-solution_linear_RK4 = {}
-time_RK4 = {}
-err_RK4 = []
-
-
-# timeRK4 = []
-# solution_exact_RK4 = []
-# solution_linear_RK4 = []
-# solution_nonlinear_RK4 = []
-
-for path in paths:
-  if "validation_files/valRK4_time_Ni" in path:
-    Ni_v.append( int(path[31:-4]) )
+# Ni_v = []
+# solution_exact_RK4 = {}
+# solution_nonlinear_RK4 = {}
+# solution_linear_RK4 = {}
+# time_RK4 = {}
+# err_RK4 = []
 
 
-for N in Ni_v:
-  templist = []
-  with open("validation_files/valRK4_exact_linear_Ni{}.txt".format(N)) as s:
-    lines = s.read().splitlines()
-    #for line in lines:
-    temp=lines[0].split()
-    for numb in temp:
-      templist.append(float(numb))
+# # timeRK4 = []
+# # solution_exact_RK4 = []
+# # solution_linear_RK4 = []
+# # solution_nonlinear_RK4 = []
 
-  solution_exact_RK4[N] = np.array(templist)
+# for path in paths:
+  # if "validation_files/valRK4_time_Ni" in path:
+    # Ni_v.append( int(path[31:-4]) )
 
-  templist = []
-  with open("validation_files/valRK4_solution_linear_Ni{}.txt".format(N)) as s:
-    lines = s.read().splitlines()
-    #for line in lines:
-    temp=lines[0].split()
-    for numb in temp:
-      templist.append(float(numb))
 
-  solution_linear_RK4[N] = np.array(templist)
+# for N in Ni_v:
+  # templist = []
+  # with open("validation_files/valRK4_exact_linear_Ni{}.txt".format(N)) as s:
+    # lines = s.read().splitlines()
+    # #for line in lines:
+    # temp=lines[0].split()
+    # for numb in temp:
+      # templist.append(float(numb))
 
-  templist = []
-  with open("validation_files/valRK4_solution_nonlinear_Ni{}.txt".format(N)) as s:
-    lines = s.read().splitlines()
-    #for line in lines:
-    temp=lines[0].split()
-    for numb in temp:
-      templist.append(float(numb))
+  # solution_exact_RK4[N] = np.array(templist)
 
-  solution_nonlinear_RK4[N] = np.array(templist)
+  # templist = []
+  # with open("validation_files/valRK4_solution_linear_Ni{}.txt".format(N)) as s:
+    # lines = s.read().splitlines()
+    # #for line in lines:
+    # temp=lines[0].split()
+    # for numb in temp:
+      # templist.append(float(numb))
 
-  templist = []
-  with open("validation_files/valRK4_time_Ni{}.txt".format(N)) as s:
-    lines = s.read().splitlines()
-    #for line in lines:
-    temp=lines[0].split()
-    for numb in temp:
-      templist.append(float(numb))
+  # solution_linear_RK4[N] = np.array(templist)
 
-  time_RK4[N] = np.array(templist)
+  # templist = []
+  # with open("validation_files/valRK4_solution_nonlinear_Ni{}.txt".format(N)) as s:
+    # lines = s.read().splitlines()
+    # #for line in lines:
+    # temp=lines[0].split()
+    # for numb in temp:
+      # templist.append(float(numb))
 
-  plt.figure(figsize=(h_size, v_size))
-  plt.plot(time_RK4[N]*10**(6),solution_exact_RK4[N])
-  plt.plot(time_RK4[N]*10**(6),solution_linear_RK4[N])
-  plt.plot(time_RK4[N]*10**(6),solution_nonlinear_RK4[N])
-  plt.title( "$N_i$ = {}     $n1_0$/$n_0$ = {}".format(N,n10_n0) )
-  plt.ylabel("$n_1$/$n_0$")
-  plt.xlabel("time [$\mu s$]")
-  plt.legend(["exact","linear","nonlinear"])
-  plt.tight_layout() 
-  filename = "validation_files/solution_Ni{}_{}".format(N,n10_n0)
-  filename = filename.replace(".","_") + ".png"
-  plt.savefig(filename)
+  # solution_nonlinear_RK4[N] = np.array(templist)
 
-for N in Ni_v:
-  max_index = np.argmax( np.abs (solution_linear_RK4[N] - solution_exact_RK4[N])  )
-  err_RK4.append( np.abs( ( solution_linear_RK4[N][max_index] - solution_exact_RK4[N][max_index]  ) \
-                   / solution_exact_RK4[N][max_index] ) )
+  # templist = []
+  # with open("validation_files/valRK4_time_Ni{}.txt".format(N)) as s:
+    # lines = s.read().splitlines()
+    # #for line in lines:
+    # temp=lines[0].split()
+    # for numb in temp:
+      # templist.append(float(numb))
 
-Ni_v = np.array(Ni_v)
-err_RK4 = np.array(err_RK4)
+  # time_RK4[N] = np.array(templist)
 
-plt.figure(figsize=(h_size, v_size))
-plt.loglog(Ni_v,err_RK4,'*')
-plt.title("$n1_0$/$n_0$ = {}".format(n10_n0))
-plt.xlabel("$N_i$")
-plt.ylabel("error")
-plt.tight_layout() 
-plt.savefig("validation_files/Convergence_RK4.png") 
+  # plt.figure(figsize=(h_size, v_size))
+  # plt.plot(time_RK4[N]*10**(6),solution_exact_RK4[N])
+  # plt.plot(time_RK4[N]*10**(6),solution_linear_RK4[N])
+  # plt.plot(time_RK4[N]*10**(6),solution_nonlinear_RK4[N])
+  # plt.title( "$N_i$ = {}     $n1_0$/$n_0$ = {}".format(N,n10_n0) )
+  # plt.ylabel("$n_1$/$n_0$")
+  # plt.xlabel("time [$\mu s$]")
+  # plt.legend(["exact","linear","nonlinear"])
+  # plt.tight_layout() 
+  # filename = "validation_files/solution_Ni{}_{}".format(N,n10_n0)
+  # filename = filename.replace(".","_") + ".png"
+  # plt.savefig(filename)
+
+# for N in Ni_v:
+  # max_index = np.argmax( np.abs (solution_linear_RK4[N] - solution_exact_RK4[N])  )
+  # err_RK4.append( np.abs( ( solution_linear_RK4[N][max_index] - solution_exact_RK4[N][max_index]  ) \
+                   # / solution_exact_RK4[N][max_index] ) )
+
+# Ni_v = np.array(Ni_v)
+# err_RK4 = np.array(err_RK4)
+
+# plt.figure(figsize=(h_size, v_size))
+# plt.loglog(Ni_v,err_RK4,'*')
+# plt.title("$n1_0$/$n_0$ = {}".format(n10_n0))
+# plt.xlabel("$N_i$")
+# plt.ylabel("error")
+# plt.tight_layout() 
+# plt.savefig("validation_files/Convergence_RK4.png") 
 
 plt.show()
 

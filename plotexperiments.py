@@ -9,6 +9,7 @@ import sys
 import pandas as pd
 from scipy.fftpack import fft
 import pywt
+from matplotlib.ticker import FormatStrFormatter
 
 font = {'size'   : 18}
 plt.rc('font', **font)
@@ -24,14 +25,18 @@ do_decr = True
 do_incr = False
 do_show = False
 do_save = True
-do_spectrum = False
+do_spectrum = True
 
-date = "2021-06-18"
-file_pramble = "Y" #"WFM"
+nf = 1000
+nk = 1000
+
+f_ceil = 10*1e3
+date = "2021-02-21"
+file_pramble = "WF_P"
 run_all = False
-#runs_subset = [1]
-runs_subset = range(1,33+1)
-excelfile = "experiment/Testing_2020.xlsx"
+#runs_subset = [58]
+runs_subset = range(1,150+1)
+excelfile = "experiment/Testing_2020_new3.xlsx"
 
 df = pd.read_excel(excelfile, sheet_name = date)
 
@@ -41,7 +46,9 @@ I1 = []
 I2 = []
 I3 = []
 I_tot = []
-dV_ballast = []
+I_tot_mean = []
+V_cathode = []
+V_cathode_mean = []
 mode = []
 main_frequency = []
 
@@ -78,6 +85,7 @@ for row,seg1 in enumerate(df["file name current 1"]):
     # input()
 
     t = []
+    t4 = []
     s1 = []
     s2 = []
     s3 = []
@@ -107,7 +115,11 @@ for row,seg1 in enumerate(df["file name current 1"]):
       csvreader = csv.reader(csvfile)
       next(csvreader)
       for row in csvreader:
-        s4.append(float(row[1]))
+        if float(float(row[1])<0.0):
+          s4.append(-float(row[1]))
+        else:
+          s4.append(float(row[1]))
+        t4.append(float(row[0]))
 
     t = np.array(t)
     s1 = np.array(s1)
@@ -115,13 +127,13 @@ for row,seg1 in enumerate(df["file name current 1"]):
     s3 = np.array(s3)
     s4 = np.array(s4)
     
-    Itot = s1 + s2 + s3
+    Itot = (s1 + s2 + s3)/50.0
     
     Ln = len(s1)
 
+   # mean average filter 
     
-    
-    Nma = 25 # only odd
+    Nma = 25 # only odd numbers
     nma = int(Nma/2)
     s1_ma = np.zeros(Ln-2*nma)
     s2_ma = np.zeros(Ln-2*nma)
@@ -144,7 +156,6 @@ for row,seg1 in enumerate(df["file name current 1"]):
       
     Itot_ma = s1_ma + s2_ma + s3_ma
 
-    print("ballast voltage drop = {}".format(np.mean(s4)*500)) 
 
     # remove mean value
     # s1 = s1 - np.mean(s1)
@@ -157,7 +168,15 @@ for row,seg1 in enumerate(df["file name current 1"]):
 
     s1_detrended = signal.detrend(s1)
     s2_detrended = signal.detrend(s2)
-    s3_detrended = signal.detrend(s3)
+
+    s1_mod = s1_detrended/np.max(np.abs(s1_detrended))
+    s2_mod = s2_detrended/np.max(np.abs(s2_detrended))
+
+    #plt.figure()
+    #plt.plot(t, s1_mod)
+    #plt.plot(t, s2_mod)
+    #plt.show()
+    #input()
 
     R0 = 9.5e-3
     #dx = 10.9*np.pi/180.0
@@ -166,13 +185,13 @@ for row,seg1 in enumerate(df["file name current 1"]):
     #dx = 40.0*np.pi/180.0
 
     dt = t[1] - t[0]
-    print(dt)
+    #print(dt)
     #input()
     # wk2p01(s1,s2,dt,dx)
 
 
-    ff1 = fft(s1_detrended)
-    ff2 = fft(s2_detrended)
+    ff1 = fft(s1_mod)
+    ff2 = fft(s2_mod)
     ff1 = ff1[0:len(ff1)//2]
     ff2 = ff2[0:len(ff2)//2]
 
@@ -197,9 +216,7 @@ for row,seg1 in enumerate(df["file name current 1"]):
     ## spectrum analysis
     if do_spectrum:
 
-      nf = 1000
-      nk = 1000
-      n = len(s1_detrended)
+      n = len(s1_mod)
 
       kNyq = 2*np.pi/dx/2.0			# Nyquist wavenumber
       fNyq = 1.0/dt/2.0		# Nyquist frequency
@@ -225,14 +242,12 @@ for row,seg1 in enumerate(df["file name current 1"]):
       S22 = np.zeros((nf,nk),dtype = complex)
       fsp = np.zeros(nf)
 
-      wx1 = signal.cwt(s1_detrended, signal.morlet2, scale) 
+      wx1 = signal.cwt(s1_mod, signal.morlet2, scale) 
 
-      wx2 = signal.cwt(s2_detrended, signal.morlet2, scale)
-
-      print("len = {}".format(len(wx1)))
+      wx2 = signal.cwt(s2_mod, signal.morlet2, scale)
 
       for i in range(nf):
-        print("spectral analysis {:0.1f} %".format(i/nf*100))
+        print("Run {}: spectral analysis {:0.1f} %".format(run_num, i/nf*100))
         ntrans = int(round(np.min([1.5*scale[i], n/8])))
         #print(ntrans)
         
@@ -264,39 +279,99 @@ for row,seg1 in enumerate(df["file name current 1"]):
 
       i_f, i_t = np.unravel_index(np.argmax(S), S.shape)
       m_main = k[i_t]
-      max_f = fz[i_f]
+      f_main = fz[i_f]    
+      
+      # find time of maximum 
+      
+#      plt.figure()
+#      plt.plot(t, np.abs(wx1[i_f,:]))
+      index_t1 = np.argmax(wx1[i_f,:])
+      max_wx1 = np.abs(wx1[i_f,:])[index_t1]
+#      plt.plot(t[index_t1], max_wx1, "ok")
 
-      plt.figure(figsize=(h_size, v_size))
-      plt.pcolormesh(k,fz*1e-3,np.log10(S), cmap = 'jet')
-      #plt.plot(m_main,max_f*1e-3,'ko')
+#      plt.figure()
+#      plt.plot(t, np.abs(wx2[i_f,:]))
+      index_t2 = np.argmax(wx2[i_f,:])
+      max_wx2 = np.abs(wx2[i_f,:])[index_t2]
+#      plt.plot(t[index_t2], max_wx2, "ok")
+     
+      if np.abs(wx1[i_f,index_t1]) > np.abs(wx2[i_f,index_t2]):
+        Vc_main = s4[index_t1]
+        Itot_main = Itot[index_t1]
+      else:
+        Vc_main = s4[index_t2]
+        Itot_main = Itot[index_t2]
+
+      # plot maximum of spectrum at each frequency with same color scale as spectrum
+      f_ = []
+      s_ = []
+      k_ = []
+
+      for i in range(len(k)):
+        k_.append(k[i])
+        i_ = np.argmax(S[:,i])
+        f_.append(fz[i_])
+        s_.append(S[i_,i])
+        #print(min(S[:,i]))
+
+      f_.append(-2000000.0)
+      k_.append(0.0)
+      s_.append(100.0)
+
+      f_ = np.array(f_)
+      k_ = np.array(k_)
+
+      s_ = np.log10(s_)
+      s_[-1] = np.min(np.log10(S[~np.isinf(np.log10(S))]))
+      
+
+
+      fig = plt.figure(figsize=(h_size, v_size))
+      plt.scatter(k_,f_*1e-3, c = s_, cmap = "jet")
+      plt.xlabel("mode")
+      plt.ylabel("frequency [kHz]")
+      plt.ylim((0,10*1e3)) 
+      plt.tight_layout()
+      if do_save:
+        plt.savefig(data_location+"/"+run_num+"_maxf_m.png")
+        fig.clear()
+        plt.close()
+
+
+      maxS = np.log10(np.max(S))
+      fig = plt.figure(figsize=(h_size, v_size))
+      plt.pcolormesh(k,fz*1e-3,np.log10(S)/maxS, cmap = 'jet', shading = 'auto')
+      #plt.plot(m_main,f_main*1e-3,'bx', markersize  = 10)
       #plt.pcolormesh(k,fz*1e-3,S, cmap = 'jet')
       # plt.pcolormesh(k + 2*kNyq,fz*1e-3,np.log10(S), cmap = 'jet')
       # plt.pcolormesh(k - 2*kNyq,fz*1e-3,np.log10(S), cmap = 'jet')
       plt.xlabel("mode")
       plt.ylabel("frequency [kHz]")
-      plt.ylim((0,10*1e3))
+      plt.ylim((0,f_ceil))
       plt.colorbar()
       plt.tight_layout()
       if do_save:
         plt.savefig(data_location+"/"+run_num+"_spectrum.png") 
+        fig.clear()
         plt.close()
       
 
-      plt.figure(figsize=(h_size, v_size))
+      fig = plt.figure(figsize=(h_size, v_size))
       plt.plot(f_v*1e-3,np.abs(ff1))
       plt.plot(f_v*1e-3,np.abs(ff2))
       plt.xlabel("frequency [kHz]")
       plt.ylabel("signal amp [mA]")
       plt.legend(["s1","s2"])
       plt.tight_layout()
-      plt.xlim((0,10*1e3))
+      plt.xlim((0,f_ceil))
       if do_save:
         plt.savefig(data_location+"/"+run_num+"_fft.png") 
+        fig.clear()
         plt.close()
       # filename = os.path.join(path,"FFT.png") 
       # plt.savefig(filename)  
 
-      plt.figure(figsize=(h_size, v_size))
+      fig = plt.figure(figsize=(h_size, v_size))
       plt.subplot(2,1,1)
       plt.semilogy(f_v/1e6,np.abs(ff1),'b')
       plt.tight_layout() 
@@ -307,76 +382,109 @@ for row,seg1 in enumerate(df["file name current 1"]):
       plt.axis((0,10,1e-4,1))
       if do_save:
         plt.savefig(data_location+"/"+run_num+"_fft_semilogy.png") 
+        fig.clear()
         plt.close()
- 
-      nf = len(ff1)
 
-      f = np.linspace(flower,fupper,nf) # array of frequencies
-      scale = 1.0/(f*dt) # array of wavelet scales
+      maxwx = np.max(np.concatenate([np.abs(wx1),np.abs(wx2)]))
+      #wx1[0,-1] = maxwx
+      #wx2[0,-1] = maxwx
 
-      Z1 = signal.cwt(s1_detrended, signal.morlet2, scale) 
-
-      Z2 = signal.cwt(s2_detrended, signal.morlet2, scale) 
-
-      fz = pywt.scale2frequency('morl', scale)/dt
-
-
-      plt.figure(figsize=(h_size, v_size))
-      plt.contourf(t*1e6,fz*1e-3,np.abs(Z1),levels = 100, cmap = 'jet')
-      plt.colorbar()
-      plt.ylim((0,10*1e3))
-      plt.xlabel("time [$\mu$s]")
-      plt.ylabel("frequency [kHz]")
-      plt.title("signal 1")
+ #     plt.contourf(t*1e6,fz*1e-3,np.log10(np.abs(wx1)),levels = 100, cmap = 'jet')
+      fig, ax = plt.subplots(figsize=(h_size, h_size))
+      m = ax.pcolormesh(t*1e6,fz*1e-3,np.abs(wx1)/np.max(np.abs(wx1)), cmap = 'jet', shading ='auto')
+      cbar = fig.colorbar(m)
+      cbar.ax.tick_params(labelsize = 30)
+      ax.set_ylim((0,f_ceil))
+      ax.set_xlabel("time [$\mu$s]")
+      ax.set_ylabel("frequency [kHz]")
+      ax.set_title("segment 1")
+      for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
+        item.set_fontsize(30)
       plt.tight_layout()
       if do_save:
         plt.savefig(data_location+"/"+run_num+"_wavelet_s1.png") 
+        fig.clear()
         plt.close()
       # filename = os.path.join(path,"signal1Morlet_contour.png") 
       # plt.savefig(filename) 
 
-      i_f, i_t = np.unravel_index(np.argmax(Z1), Z1.shape)
+      #i_f, i_t = np.unravel_index(np.argmax(Z1), Z1.shape)
 
 
 
-      plt.figure(figsize=(h_size, v_size))
-      plt.contourf(t*1e6,fz*1e-3,np.abs(Z2),levels = 100, cmap = 'jet')
-      plt.colorbar()
-      plt.ylim((0,10*1e3))
-      plt.xlabel("time [$\mu$s]")
-      plt.ylabel("frequency [kHz]")
-      plt.title("signal 2")
+      fig, ax = plt.subplots(figsize=(h_size, h_size))
+      m = ax.pcolormesh(t*1e6,fz*1e-3,np.abs(wx2)/np.max(np.abs(wx2)), cmap = 'jet', shading = 'auto')
+      cbar = fig.colorbar(m)
+      cbar.ax.tick_params(labelsize = 30)
+      ax.set_ylim((0,f_ceil))
+      ax.set_xlabel("time [$\mu$s]")
+      ax.set_ylabel("frequency [kHz]")
+      ax.set_title("segment 2")
+      for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):
+          item.set_fontsize(30)
       plt.tight_layout() 
       if do_save:
         plt.savefig(data_location+"/"+run_num+"_wavelet_s2.png") 
+        fig.clear()
         plt.close()
       # filename = os.path.join(path,"signal2Morlet_contour.png") 
       # plt.savefig(filename) 
- 
+
+
+
+    ax1max = 0.0
+    ax1min = np.min(np.concatenate([s1_ma,s2_ma]))*1.15/50*1000.0 
+    ax2max = np.max(s3_ma)*0.67/50*1000.0
+    ax2min = np.min(Itot_ma)/50*1000.0*1.08
       
-    fig,ax = plt.subplots(figsize=(h_size, v_size))
+    fig, (ax, ax2) = plt.subplots(2, 1, sharex=True, figsize=(h_size, v_size))
     lns1 = ax.plot(t_ma*1e6,s1_ma/50*1000, label = '$s_1$')
     lns2 = ax.plot(t_ma*1e6,s2_ma/50*1000, label = '$s_2$')
-    ax.set_xlabel("time [$\mu$s]")
-    ax.set_ylabel("signal current 1,2 [mA]")
-    ax.set_ylim((np.mean(s2/50*1000)*5, np.max([np.max(s1), np.max(s2)])))
-    ax2=ax.twinx()
-    lns3  = ax2.plot(t_ma*1e6,s3_ma/50*1000, label = '$s_3$')
-    lns4  = ax2.plot(t_ma*1e6,Itot_ma/50*1000, "--k", label = '$I_{tot}$')
+    
+    ax.set_ylabel("segment current [mA]")
+    #ax.set_ylim((np.mean(s2/50*1000)*6, np.max([np.max(s1), np.max(s2)])))
+    #ax.set_ylim((np.mean(s2/50*1000)*6, 0.0))
+    ax.set_ylim((ax1min, ax1max))
+    ax.spines['bottom'].set_visible(False)
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    #ax2=ax.twinx()
+    lns3  = ax2.plot(t_ma*1e6,s3_ma/50*1000, color = '#2ca02c', label = '$s_3$')
+    lns4  = ax2.plot(t_ma*1e6,Itot_ma/50*1000, "-", color = '#d62728', label = '$total$')
     lns = lns1 + lns2 + lns3 + lns4
     labs = [l.get_label() for l in lns]
-    ax.legend(lns, labs)#, loc=7)
+    
     #ax2.set_ylim((np.mean(s3/50*1000) + (np.mean(s1/50*1000) + (np.mean(s1/50*1000)))*4,0.1))
-    ax2.set_ylim((np.mean(Itot_ma/50*1000)*1.05,0.1))
-    ax2.set_ylabel("signal current 3 (main), total [mA]")
+    #ax2.set_ylim((np.mean(Itot_ma/50*1000)*1.05,0.0))
+    ax2.set_ylim((ax2min,ax2max))
+    ax2.spines['top'].set_visible(False)
+    ax.xaxis.tick_top()
+    ax.tick_params(labeltop=False)  # don't put tick labels at the top
+    ax2.xaxis.tick_bottom()
+    ax2.set_xlabel("time [$\mu$s]")
+    ax2.legend(lns, labs, ncol=2, loc=1)
+    ax2.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    #ax2.set_ylabel("signal current 3 (main), total [mA]")
+    
+    d = .015  # how big to make the diagonal lines in axes coordinates
+    # arguments to pass to plot, just so we don't keep repeating them
+    kwargs = dict(transform=ax.transAxes, color='k', clip_on=False)
+    ax.plot((-d, +d), (-d, +d), **kwargs)        # top-left diagonal
+    ax.plot((1 - d, 1 + d), (-d, +d), **kwargs)  # top-right diagonal
+
+    kwargs.update(transform=ax2.transAxes)  # switch to the bottom axes
+    ax2.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
+    ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
+
+    
     plt.tight_layout()
-    plt.title("signals")
+    #plt.title("signals")
     if do_save:
       plt.savefig(data_location+"/"+run_num+"_signal_filtered.png") 
+      fig.clear()
       plt.close()
     
 
-    plt.figure(figsize=(h_size, v_size))
+    fig = plt.figure(figsize=(h_size, v_size))
     plt.plot(t*1e6,s1/50*1000)
     plt.plot(t*1e6,s2/50*1000)
     plt.xlabel("time [$\mu$s]")
@@ -386,6 +494,7 @@ for row,seg1 in enumerate(df["file name current 1"]):
     plt.title("raw signals")
     if do_save:
       plt.savefig(data_location+"/"+run_num+"_signal_raw_12.png") 
+      fig.clear()
       plt.close()
 
 
@@ -407,20 +516,39 @@ for row,seg1 in enumerate(df["file name current 1"]):
     plt.title("raw signals")
     if do_save:
       plt.savefig(data_location+"/"+run_num+"_signal_raw_all.png")
+      fig.clear()
       plt.close()
-      
 
 
+    fig = plt.figure(figsize=(h_size, v_size))
+    plt.plot(t*1e6,s4)
+    plt.xlabel("time [$\mu$s]")
+    plt.ylabel("voltage [mV]")
+    plt.title("cathode voltage")
+    if do_save:
+      plt.savefig(data_location+"/"+run_num+"_cathode_voltage.png") 
+      fig.clear()
+      plt.close()
 
+    fig = plt.figure(figsize=(h_size, v_size))
+    plt.plot(t*1e6,Itot*1e3)
+    plt.xlabel("time [$\mu$s]")
+    plt.ylabel("current [mA]")
+    plt.title("total current")
+    if do_save:
+      plt.savefig(data_location+"/"+run_num+"_total_current.png") 
+      fig.clear()
+      plt.close()
 
-    
     
     print("Currents 1, 2, 3, sum [mA]:")
     print(np.mean(s1)/50*1000)
     print(np.mean(s2)/50*1000)
     print(np.mean(s3)/50*1000)
     print(np.mean(s1)/50*1000+np.mean(s2)/50*1000+np.mean(s3)/50*1000)
-    print("ballast voltage drop = {}".format(np.mean(s4)*500))  
+    print("Cathode voltage = {}".format(np.mean(s4)*500))  
+
+    
 
     if do_spectrum:
       print("Max frequency, mode:")
@@ -432,11 +560,15 @@ for row,seg1 in enumerate(df["file name current 1"]):
     I1.append(-np.mean(s1)/50*1000)
     I2.append(-np.mean(s2)/50*1000)
     I3.append(-np.mean(s3)/50*1000)
-    I_tot.append(-np.mean(s1)/50*1000-np.mean(s2)/50*1000-np.mean(s3)/50*1000)
-    dV_ballast.append(np.mean(s4)*500)
+    I_tot_mean.append(np.abs(np.mean(Itot))*1000)
+    I_tot.append(-Itot_main*1e3)
+    V_cathode.append(Vc_main)
+    V_cathode_mean.append(np.abs(np.mean(s4)))
     if do_spectrum:
       mode.append(m_main)
-      main_frequency.append(max_f)
+      main_frequency.append(f_main)
+    if do_save:
+      plt.close('all')
 
 
 
@@ -449,27 +581,29 @@ print("I2 mean:")
 print(I2)
 print("I3 mean:")
 print(I3)
-print("Itot mean:")
+print("Itot main:")
 print(I_tot)
-print("dV ballast:")
-print(dV_ballast)
+print("Itot mean:")
+print(I_tot_mean)
+print("cathode voltage main:")
+print(V_cathode)
+print("cathode voltage mean:")
+print(V_cathode_mean)
 print("main mode:")
 print(mode)
 print("main frequency:")
 print(main_frequency)
 
-# f = open(data_location + "/solution.txt", "w")
+## Plots
 
-# f.writelines(run_list)
-# f.writelines(map(str, I1))
-# f.writelines(map(str, I2))
-# f.writelines(map(str, I3))
-# f.writelines(map(str, I_tot))
-# f.writelines(map(str, dV_ballast))
-# f.writelines(map(str, mode))
-# f.writelines(map(str, main_frequency))
+I_main = np.array(I3)
+I_dis = np.array(I_tot)
+V_dis = np.array(V_cathode) - I_dis*65/1000
 
-# f.close()
+#plt.plot(I_dis, V_dis, 'ok')
+#plt.show()
+
+
 
 if do_show:
   plt.show()

@@ -23,10 +23,13 @@ linesize = 3.0
 linesize_large = 4.0
 
 # subset of modes
-unique_m = (2, 3, 4, 5)
+unique_m = (2, 3, 4, 5, 6, 7, 8)
 do_decr = True
 do_incr = True
 do_movies = False
+do_show = True
+do_terms_analysis = False
+do_phase = False
 
 import numpy as np
 import os
@@ -315,12 +318,15 @@ if not os.path.isdir(figures_dir):
  
 if not os.path.isdir(movies_dir):
   os.makedirs(movies_dir) 
-	
+
 plt.figure(1,figsize=(h_size, v_size))
 for mode in unique_m:
   if mode in m_decr and do_decr:
     plt.plot(plasma_potential[m_decr == mode],frequency_decr[m_decr == mode]/1000,color=colors[mode], linewidth = linesize)
     legend_list = legend_list + ["m$_{decr}$ = " + str(mode)]                                       
+    #plt.show()
+    #input("Press any key to terminate the program")
+
   if mode in m_incr and do_incr:                                                                                  
     plt.plot(plasma_potential[m_incr == mode],frequency_incr[m_incr == mode]/1000,'--',color = colors[mode], linewidth = linesize)	
     legend_list = legend_list + ["m$_{incr}$ = " + str(mode)]                                       
@@ -423,36 +429,38 @@ plt.savefig(figures_dir+"I_vs_EL.eps")
 
 
 # 
-plt.figure(21,figsize=(h_size, v_size))
-legend_list=[]
-for mode in unique_m:
-  if mode in m_decr and do_decr:
-    plt.plot(plasma_potential[m_decr == mode],dphi_phase_decr[m_decr == mode],'--',color=colors[mode], linewidth = linesize)    
-    legend_list = legend_list + ["$\phi$"]     
-    plt.plot(plasma_potential[m_decr == mode],vi1_phase_decr[m_decr == mode],'-.',color=colors[mode], linewidth = linesize)    
-    legend_list = legend_list + ["$v_i$"] 
-    plt.plot(plasma_potential[m_decr == mode],ve1_EXB_phase_decr[m_decr == mode],':',color=colors[mode], linewidth = linesize)    
-    legend_list = legend_list + ["$v_e{_ExB}$"]         
-    plt.plot(plasma_potential[m_decr == mode],ve1_D_phase_decr[m_decr == mode],color=colors[mode], linewidth = linesize)
-    legend_list = legend_list + ["$v_e{_D}$"] 
-  if mode in m_incr and do_incr:
-    plt.plot(plasma_potential[m_decr == mode],dphi_phase_decr[m_decr == mode],'--',color=colors[mode], linewidth = linesize)    
-    legend_list = legend_list + ["$\phi$"]     
-    plt.plot(plasma_potential[m_decr == mode],vi1_phase_decr[m_decr == mode],'-.',color=colors[mode], linewidth = linesize)    
-    legend_list = legend_list + ["$v_i$"] 
-    plt.plot(plasma_potential[m_decr == mode],ve1_EXB_phase_decr[m_decr == mode],':',color=colors[mode], linewidth = linesize)    
-    legend_list = legend_list + ["$v_e{_ExB}$"]         
-    plt.plot(plasma_potential[m_decr == mode],ve1_D_phase_decr[m_decr == mode],color=colors[mode], linewidth = linesize)
-    legend_list = legend_list + ["$v_e{_D}$"] 
 
-# plt.legend(legend_list, fancybox = False, edgecolor = 'k' )
-plt.xlabel("E$_0$L$_n$ [V]")
-plt.ylabel("Phase [rad]")
-plt.tight_layout()
-#plt.show(block=True)
-figure_name = "phase_shift"
-plt.savefig(figures_dir+figure_name+".png")
-plt.savefig(figures_dir+figure_name+".eps")
+if do_phase:
+  plt.figure(21,figsize=(h_size, v_size))
+  legend_list=[]
+  for mode in unique_m:
+    if mode in m_decr and do_decr:
+      plt.plot(plasma_potential[m_decr == mode],dphi_phase_decr[m_decr == mode],'--',color=colors[mode], linewidth = linesize)    
+      legend_list = legend_list + ["$\phi$"]     
+      plt.plot(plasma_potential[m_decr == mode],vi1_phase_decr[m_decr == mode],'-.',color=colors[mode], linewidth = linesize)    
+      legend_list = legend_list + ["$v_i$"] 
+      plt.plot(plasma_potential[m_decr == mode],ve1_EXB_phase_decr[m_decr == mode],':',color=colors[mode], linewidth = linesize)    
+      legend_list = legend_list + ["$v_e{_ExB}$"]         
+      plt.plot(plasma_potential[m_decr == mode],ve1_D_phase_decr[m_decr == mode],color=colors[mode], linewidth = linesize)
+      legend_list = legend_list + ["$v_e{_D}$"] 
+    if mode in m_incr and do_incr:
+      plt.plot(plasma_potential[m_decr == mode],dphi_phase_decr[m_decr == mode],'--',color=colors[mode], linewidth = linesize)    
+      legend_list = legend_list + ["$\phi$"]     
+      plt.plot(plasma_potential[m_decr == mode],vi1_phase_decr[m_decr == mode],'-.',color=colors[mode], linewidth = linesize)    
+      legend_list = legend_list + ["$v_i$"] 
+      plt.plot(plasma_potential[m_decr == mode],ve1_EXB_phase_decr[m_decr == mode],':',color=colors[mode], linewidth = linesize)    
+      legend_list = legend_list + ["$v_e{_ExB}$"]         
+      plt.plot(plasma_potential[m_decr == mode],ve1_D_phase_decr[m_decr == mode],color=colors[mode], linewidth = linesize)
+      legend_list = legend_list + ["$v_e{_D}$"] 
+
+  # plt.legend(legend_list, fancybox = False, edgecolor = 'k' )
+  plt.xlabel("E$_0$L$_n$ [V]")
+  plt.ylabel("Phase [rad]")
+  plt.tight_layout()
+  #plt.show(block=True)
+  figure_name = "phase_shift"
+  plt.savefig(figures_dir+figure_name+".png")
+  plt.savefig(figures_dir+figure_name+".eps")
 
 
 plt.figure(3,figsize=(h_size, v_size))
@@ -492,59 +500,61 @@ plt.tight_layout()
 plt.savefig(figures_dir+"vi1_vs_EL.png")
 plt.savefig(figures_dir+"vi1_vs_EL.eps")    
 	
-	
-plt.figure(5,figsize=(h_size*1.05, v_size))
-legend_list=[]
-for mode in unique_m:
-  if mode in m_decr and do_decr:
-    plt.plot(plasma_potential[m_decr == mode],frequency_decr[m_decr == mode]*2*np.pi,color=colors[mode], linewidth = linesize_large)
-    legend_list = legend_list + ["m = " + str(mode)] 
-    plt.plot(plasma_potential[m_decr == mode],A_decr[m_decr == mode],'--',color=colors[mode], linewidth = linesize)
-    legend_list = legend_list + ["A"] 
-    plt.plot(plasma_potential[m_decr == mode],B_decr[m_decr == mode],'-.',color=colors[mode], linewidth = linesize)
-    legend_list = legend_list + ["B"] 
-    plt.plot(plasma_potential[m_decr == mode],C_decr[m_decr == mode],':',color=colors[mode], linewidth = linesize)
-    legend_list = legend_list + ["C"]
+  
+if do_terms_analysis:
+    
+  plt.figure(5,figsize=(h_size*1.05, v_size))
+  legend_list=[]
+  for mode in unique_m:
+    if mode in m_decr and do_decr:
+      plt.plot(plasma_potential[m_decr == mode],frequency_decr[m_decr == mode]*2*np.pi,color=colors[mode], linewidth = linesize_large)
+      legend_list = legend_list + ["m = " + str(mode)] 
+      plt.plot(plasma_potential[m_decr == mode],A_decr[m_decr == mode],'--',color=colors[mode], linewidth = linesize)
+      legend_list = legend_list + ["A"] 
+      plt.plot(plasma_potential[m_decr == mode],B_decr[m_decr == mode],'-.',color=colors[mode], linewidth = linesize)
+      legend_list = legend_list + ["B"] 
+      plt.plot(plasma_potential[m_decr == mode],C_decr[m_decr == mode],':',color=colors[mode], linewidth = linesize)
+      legend_list = legend_list + ["C"]
 
-		
-		
-art = plt.legend(legend_list, fancybox = False, edgecolor = 'k' , loc='right' , bbox_to_anchor=(1.425, 0.5) , fontsize = 22, labelspacing=0.188)
-plt.xlabel("E$_0$L$_n$ [V]")
-plt.ylabel("$\omega_R$ [rad/s]")
+      
+      
+  art = plt.legend(legend_list, fancybox = False, edgecolor = 'k' , loc='right' , bbox_to_anchor=(1.425, 0.5) , fontsize = 22, labelspacing=0.188)
+  plt.xlabel("E$_0$L$_n$ [V]")
+  plt.ylabel("$\omega_R$ [rad/s]")
 
-#plt.gca().yaxis.set_minor_formatter(ticker.NullFormatter())
-#plt.gca().yaxis.set_major_formatter(ticker.ScalarFormatter())
-#plt.gca().yaxis.get_major_formatter().set_scientific(False)
-#plt.gca().yaxis.get_major_formatter().set_useOffset(False)
+  #plt.gca().yaxis.set_minor_formatter(ticker.NullFormatter())
+  #plt.gca().yaxis.set_major_formatter(ticker.ScalarFormatter())
+  #plt.gca().yaxis.get_major_formatter().set_scientific(False)
+  #plt.gca().yaxis.get_major_formatter().set_useOffset(False)
 
-plt.tight_layout()
-#plt.show(block=True)
-plt.savefig(figures_dir+"wR_vs_EL_decr_comparison.png", additional_artists = art, bbox_inches="tight")
-plt.savefig(figures_dir+"wR_vs_EL_decr_comparison.eps", additional_artists = art, bbox_inches="tight")
-
-
-plt.figure(6,figsize=(h_size, v_size))
-legend_list=[]
-for mode in unique_m:
-  if mode in m_incr and do_incr:
-    plt.plot(plasma_potential[m_incr == mode],frequency_incr[m_incr == mode]*2*np.pi,color=colors[mode], linewidth = linesize_large)
-    legend_list = legend_list + ["m$_{incr}$ = " + str(mode)] 
-    plt.plot(plasma_potential[m_incr == mode],A_incr[m_incr == mode],'--',color=colors[mode], linewidth = linesize)
-    legend_list = legend_list + ["A"] 
-    plt.plot(plasma_potential[m_incr == mode],B_incr[m_incr == mode],'-.',color=colors[mode], linewidth = linesize)
-    legend_list = legend_list + ["B"] 
-    plt.plot(plasma_potential[m_incr == mode],C_incr[m_incr == mode],':',color=colors[mode], linewidth = linesize)
-    legend_list = legend_list + ["C"] 
+  plt.tight_layout()
+  #plt.show(block=True)
+  plt.savefig(figures_dir+"wR_vs_EL_decr_comparison.png", additional_artists = art, bbox_inches="tight")
+  plt.savefig(figures_dir+"wR_vs_EL_decr_comparison.eps", additional_artists = art, bbox_inches="tight")
 
 
+  plt.figure(6,figsize=(h_size, v_size))
+  legend_list=[]
+  for mode in unique_m:
+    if mode in m_incr and do_incr:
+      plt.plot(plasma_potential[m_incr == mode],frequency_incr[m_incr == mode]*2*np.pi,color=colors[mode], linewidth = linesize_large)
+      legend_list = legend_list + ["m$_{incr}$ = " + str(mode)] 
+      plt.plot(plasma_potential[m_incr == mode],A_incr[m_incr == mode],'--',color=colors[mode], linewidth = linesize)
+      legend_list = legend_list + ["A"] 
+      plt.plot(plasma_potential[m_incr == mode],B_incr[m_incr == mode],'-.',color=colors[mode], linewidth = linesize)
+      legend_list = legend_list + ["B"] 
+      plt.plot(plasma_potential[m_incr == mode],C_incr[m_incr == mode],':',color=colors[mode], linewidth = linesize)
+      legend_list = legend_list + ["C"] 
 
-art = plt.legend(legend_list, loc='right', fancybox = False, edgecolor = 'k' , bbox_to_anchor=(1.4, 0.5), fontsize = 22, labelspacing=0.07)
-plt.xlabel("E$_0$L$_n$ [V]")
-plt.ylabel("$\omega_R$ [rad/s]")
-plt.tight_layout()
-#plt.show(block=True)
-plt.savefig(figures_dir+"wR_vs_EL_incr_comparison.png", additional_artists = art, bbox_inches="tight")
-plt.savefig(figures_dir+"wR_vs_EL_incr_comparison.eps", additional_artists = art, bbox_inches="tight")
+
+
+  art = plt.legend(legend_list, loc='right', fancybox = False, edgecolor = 'k' , bbox_to_anchor=(1.4, 0.5), fontsize = 22, labelspacing=0.07)
+  plt.xlabel("E$_0$L$_n$ [V]")
+  plt.ylabel("$\omega_R$ [rad/s]")
+  plt.tight_layout()
+  #plt.show(block=True)
+  plt.savefig(figures_dir+"wR_vs_EL_incr_comparison.png", additional_artists = art, bbox_inches="tight")
+  plt.savefig(figures_dir+"wR_vs_EL_incr_comparison.eps", additional_artists = art, bbox_inches="tight")
 
 
 
@@ -741,114 +751,117 @@ if do_movies:
 
 
 
-ind = find_nearest_index(ion_velocity0,-900)
-fig = plt.figure(80,figsize=(h_size, v_size))
-animate_currents(ind)
-plt.savefig(figures_dir+"currents_y.png", additional_artists = art, bbox_inches="tight")
-plt.savefig(figures_dir+"currents_y.eps", additional_artists = art, bbox_inches="tight")
+# ind = find_nearest_index(ion_velocity0,-900)
+# fig = plt.figure(80,figsize=(h_size, v_size))
+# animate_currents(ind)
+# plt.savefig(figures_dir+"currents_y.png", additional_artists = art, bbox_inches="tight")
+# plt.savefig(figures_dir+"currents_y.eps", additional_artists = art, bbox_inches="tight")
 
-fig = plt.figure(81,figsize=(h_size, v_size))
-animate_segments(ind)
-plt.savefig(figures_dir+"segments_y.png", additional_artists = art, bbox_inches="tight")
-plt.savefig(figures_dir+"segments_y.eps", additional_artists = art, bbox_inches="tight")
-
+# fig = plt.figure(81,figsize=(h_size, v_size))
+# animate_segments(ind)
+# plt.savefig(figures_dir+"segments_y.png", additional_artists = art, bbox_inches="tight")
+# plt.savefig(figures_dir+"segments_y.eps", additional_artists = art, bbox_inches="tight")
 
 #                 W                       #
 
+if do_terms_analysis:
 
-with open("linear_model_solutions/w_solution.txt") as s:
-  lines = s.read().splitlines()
-  inputs = ("ion_mass_u", "Te", "B0", "R0", "LB", "Ln", "kz", "kx", "N_voltages")
-  
-  ky = []
-  wR = []
-  A = []
-  B = []
-  C = []
-  wI = []
-  alpha = []
-  beta = []
-  gamma = []
-  delta = []
-  
-  for line in lines:
-    # first I read the input parameters
-    # I need to know N_voltages to initialize
-    # the numpy arrays.
-    temp=line.split()
+
+  with open("linear_model_solutions/w_solution.txt") as s:
+    lines = s.read().splitlines()
+    inputs = ("ion_mass_u", "Te", "B0", "R0", "LB", "Ln", "kz", "kx", "N_voltages")
     
-    ky.append(np.double(temp[0])/R0) 
-    wR.append(np.double(temp[1])) 
-    A.append(np.double(temp[2])) 
-    B.append(np.double(temp[3])) 
-    C.append(np.double(temp[4])) 
-    wI.append(np.double(temp[5]))
-    alpha.append(np.double(temp[6])) 
-    beta.append(np.double(temp[7])) 
-    gamma.append(np.double(temp[8]))
+    ky = []
+    wR = []
+    A = []
+    B = []
+    C = []
+    wI = []
+    alpha = []
+    beta = []
+    gamma = []
+    delta = []
+    
+    for line in lines:
+      # first I read the input parameters
+      # I need to know N_voltages to initialize
+      # the numpy arrays.
+      temp=line.split()
+      
+      ky.append(np.double(temp[0])/R0) 
+      wR.append(np.double(temp[1])) 
+      A.append(np.double(temp[2])) 
+      B.append(np.double(temp[3])) 
+      C.append(np.double(temp[4])) 
+      wI.append(np.double(temp[5]))
+      alpha.append(np.double(temp[6])) 
+      beta.append(np.double(temp[7])) 
+      gamma.append(np.double(temp[8]))
 
-  ky = np.array(ky, dtype=np.double) 
-  wR = np.array(wR, dtype=np.double) 
-  A = np.array(A, dtype=np.double) 
-  B = np.array(B, dtype=np.double) 
-  C = np.array(C, dtype=np.double) 
-  wI = np.array(wI, dtype=np.double) 
-  alpha = np.array(alpha, dtype=np.double) 
-  beta = np.array(beta, dtype=np.double) 
-  gamma = np.array(gamma, dtype=np.double) 
-  
-  plt.figure(7,figsize=(h_size, v_size))
-  plt.plot(ky*R0,wR, linewidth = linesize_large)	
-  plt.plot(ky*R0,A,'--', linewidth = linesize)	
-  plt.plot(ky*R0,B,'-.', linewidth = linesize)	
-  plt.plot(ky*R0,C,':', linewidth = linesize)	
-  plt.legend(["$\omega_R$ tot", "A", "B", "C"], fancybox = False, edgecolor = 'k' , loc = 'upper right', ncol=2)
-  #pylab.legend(loc=9, bbox_to_anchor=(0.5, -0.1))
-  plt.xlabel("m = k$_y$R$_0$")
-  plt.ylabel("$\omega{_R}$ [rad/s]")
-  plt.tight_layout()
-  
-  plt.savefig(figures_dir+"wR_vs_ky.png")
-  plt.savefig(figures_dir+"wR_vs_ky.eps")
-  
-  plt.figure(8,figsize=(h_size, v_size))
-  
+    ky = np.array(ky, dtype=np.double) 
+    wR = np.array(wR, dtype=np.double) 
+    A = np.array(A, dtype=np.double) 
+    B = np.array(B, dtype=np.double) 
+    C = np.array(C, dtype=np.double) 
+    wI = np.array(wI, dtype=np.double) 
+    alpha = np.array(alpha, dtype=np.double) 
+    beta = np.array(beta, dtype=np.double) 
+    gamma = np.array(gamma, dtype=np.double) 
+    
+    plt.figure(7,figsize=(h_size, v_size))
+    plt.plot(ky*R0,wR, linewidth = linesize_large)	
+    plt.plot(ky*R0,A,'--', linewidth = linesize)	
+    plt.plot(ky*R0,B,'-.', linewidth = linesize)	
+    plt.plot(ky*R0,C,':', linewidth = linesize)	
+    plt.legend(["$\omega_R$ tot", "A", "B", "C"], fancybox = False, edgecolor = 'k' , loc = 'upper right', ncol=2)
+    #pylab.legend(loc=9, bbox_to_anchor=(0.5, -0.1))
+    plt.xlabel("m = k$_y$R$_0$")
+    plt.ylabel("$\omega{_R}$ [rad/s]")
+    plt.tight_layout()
+    
+    plt.savefig(figures_dir+"wR_vs_ky.png")
+    plt.savefig(figures_dir+"wR_vs_ky.eps")
+    
+    plt.figure(8,figsize=(h_size, v_size))
+    
 
-  plt.plot(ky*R0,wI*wI, linewidth = linesize)
-  plt.plot(ky*R0,alpha, linewidth = linesize)
-  plt.plot(ky*R0,beta, linewidth = linesize)
-  plt.plot(ky*R0,gamma, linewidth = linesize)
-  plt.legend(["$\omega{_I}^2$", "$α$", "$β$","$γ$"], loc = 'upper right' , fancybox = False, edgecolor = 'k' )
-  plt.xlabel("m = k$_y$R$_0$")
-  plt.ylabel("[rad/s]$^2$")
-  plt.savefig(figures_dir+"wI_vs_ky.png")
-  plt.savefig(figures_dir+"wI_vs_ky.eps")
-  
-  plt.figure(9,figsize=(h_size, v_size))
-  plt.plot(ky*R0,[alpha[i]+beta[i]+gamma[i] for i in range(len(alpha))],'r', linewidth = linesize_large)
-  plt.plot(ky*R0,[alpha[i]-beta[i]-gamma[i] for i in range(len(alpha))],'b', linewidth = linesize_large)
-  plt.legend(["C$^2$", "$\omega{_I}^2$"], loc = 'upper right', fancybox = False, edgecolor = 'k' )
-  plt.xlabel("m = k$_y$R$_0$")
-  plt.ylabel("[rad/s]$^2$")
-  plt.tight_layout()
-  
-  plt.savefig(figures_dir+"sqrt_vs_ky.png")
-  plt.savefig(figures_dir+"sqrt_vs_ky.eps")
-  
-  plt.figure(10,figsize=(h_size, v_size))
-  #plt.plot(ky,[alpha[i]-beta[i]-gamma[i] for i in range(len(alpha))],'b', linewidth = linesize_large)
-  #plt.plot(ky,[alpha[i]+beta[i]+gamma[i] for i in range(len(alpha))],'r', linewidth = linesize)
-  plt.plot(ky*R0,[beta[i]+gamma[i] for i in range(len(alpha))], linewidth = linesize)
-  plt.plot(ky*R0,alpha,'--', linewidth = linesize)	
-  plt.plot(ky*R0,beta,'-.', linewidth = linesize)	
-  plt.plot(ky*R0,gamma,':', linewidth = linesize)	
-  leg = plt.legend(["$β + γ$", "$α$", "$β$","$γ$"], loc = 'upper right', fontsize = 20 , ncol=2, fancybox = False, edgecolor = 'k' , handleheight=2.0, labelspacing=0.04)
-  plt.xlabel("m = k$_y$R$_0$")
-  plt.ylabel("[rad/s]$^2$")
-  plt.tight_layout()
-  
-  plt.savefig(figures_dir+"sqrt_vs_ky.png")
-  plt.savefig(figures_dir+"sqrt_vs_ky.eps")
-  
-plt.show()
+    plt.plot(ky*R0,wI*wI, linewidth = linesize)
+    plt.plot(ky*R0,alpha, linewidth = linesize)
+    plt.plot(ky*R0,beta, linewidth = linesize)
+    plt.plot(ky*R0,gamma, linewidth = linesize)
+    plt.legend(["$\omega{_I}^2$", "$α$", "$β$","$γ$"], loc = 'upper right' , fancybox = False, edgecolor = 'k' )
+    plt.xlabel("m = k$_y$R$_0$")
+    plt.ylabel("[rad/s]$^2$")
+    plt.savefig(figures_dir+"wI_vs_ky.png")
+    plt.savefig(figures_dir+"wI_vs_ky.eps")
+    
+    plt.figure(9,figsize=(h_size, v_size))
+    plt.plot(ky*R0,[alpha[i]+beta[i]+gamma[i] for i in range(len(alpha))],'r', linewidth = linesize_large)
+    plt.plot(ky*R0,[alpha[i]-beta[i]-gamma[i] for i in range(len(alpha))],'b', linewidth = linesize_large)
+    plt.legend(["C$^2$", "$\omega{_I}^2$"], loc = 'upper right', fancybox = False, edgecolor = 'k' )
+    plt.xlabel("m = k$_y$R$_0$")
+    plt.ylabel("[rad/s]$^2$")
+    plt.tight_layout()
+    
+    plt.savefig(figures_dir+"sqrt_vs_ky.png")
+    plt.savefig(figures_dir+"sqrt_vs_ky.eps")
+    
+    plt.figure(10,figsize=(h_size, v_size))
+    #plt.plot(ky,[alpha[i]-beta[i]-gamma[i] for i in range(len(alpha))],'b', linewidth = linesize_large)
+    #plt.plot(ky,[alpha[i]+beta[i]+gamma[i] for i in range(len(alpha))],'r', linewidth = linesize)
+    plt.plot(ky*R0,[beta[i]+gamma[i] for i in range(len(alpha))], linewidth = linesize)
+    plt.plot(ky*R0,alpha,'--', linewidth = linesize)	
+    plt.plot(ky*R0,beta,'-.', linewidth = linesize)	
+    plt.plot(ky*R0,gamma,':', linewidth = linesize)	
+    leg = plt.legend(["$β + γ$", "$α$", "$β$","$γ$"], loc = 'upper right', fontsize = 20 , ncol=2, fancybox = False, edgecolor = 'k' , handleheight=2.0, labelspacing=0.04)
+    plt.xlabel("m = k$_y$R$_0$")
+    plt.ylabel("[rad/s]$^2$")
+    plt.tight_layout()
+    
+    plt.savefig(figures_dir+"sqrt_vs_ky.png")
+    plt.savefig(figures_dir+"sqrt_vs_ky.eps")
+
+
+if do_show:
+  plt.show()
 
